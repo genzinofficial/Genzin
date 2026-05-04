@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { 
+  onAuthStateChanged, 
+  signInWithPopup, 
+  signOut, 
+  User as FirebaseUser 
+} from 'firebase/auth';
+import { auth, googleProvider, facebookProvider, appleProvider } from '../lib/firebase';
 
-interface MockUser {
+interface AuthUser {
   uid: string;
   email: string | null;
   displayName: string | null;
@@ -9,11 +16,11 @@ interface MockUser {
 }
 
 interface AuthContextType {
-  user: MockUser | null;
+  user: AuthUser | null;
   isAdmin: boolean;
   loading: boolean;
-  login: (provider?: 'google' | 'facebook' | 'apple') => void;
-  logout: () => void;
+  login: (provider?: 'google' | 'facebook' | 'apple') => Promise<void>;
+  logout: () => Promise<void>;
   isLoginModalOpen: boolean;
   setIsLoginModalOpen: (open: boolean) => void;
 }
@@ -21,40 +28,64 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<MockUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   useEffect(() => {
-    // Check for saved user in localStorage
-    const savedUser = localStorage.getItem('genzin_user');
-    if (savedUser) {
-      const parsedUser = JSON.parse(savedUser);
-      setUser(parsedUser);
-      setIsAdmin(parsedUser.email === 'genzin.official@gmail.com');
-    }
-    setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const authUser: AuthUser = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
+          emailVerified: firebaseUser.emailVerified
+        };
+        setUser(authUser);
+        setIsAdmin(firebaseUser.email === 'genzin.official@gmail.com');
+      } else {
+        setUser(null);
+        setIsAdmin(false);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const login = (provider: 'google' | 'facebook' | 'apple' = 'google') => {
-    const mockUser: MockUser = {
-      uid: `mock-${provider}-${Math.random().toString(36).substr(2, 9)}`,
-      email: 'genzin.official@gmail.com',
-      displayName: `Genzin ${provider.charAt(0).toUpperCase() + provider.slice(1)} User`,
-      photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${provider}`,
-      emailVerified: true
-    };
-    setUser(mockUser);
-    setIsAdmin(true);
-    localStorage.setItem('genzin_user', JSON.stringify(mockUser));
-    setIsLoginModalOpen(false);
+  const login = async (providerName: 'google' | 'facebook' | 'apple' = 'google') => {
+    try {
+      let provider;
+      switch (providerName) {
+        case 'google':
+          provider = googleProvider;
+          break;
+        case 'facebook':
+          provider = facebookProvider;
+          break;
+        case 'apple':
+          provider = appleProvider;
+          break;
+        default:
+          provider = googleProvider;
+      }
+
+      await signInWithPopup(auth, provider);
+      setIsLoginModalOpen(false);
+    } catch (error) {
+      console.error('Login failed:', error);
+      alert('Login failed. Please try again.');
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsAdmin(false);
-    localStorage.removeItem('genzin_user');
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
