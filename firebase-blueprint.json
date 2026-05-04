@@ -20,12 +20,14 @@
       "properties": {
         "orderId": { "type": "string" },
         "userId": { "type": "string" },
+        "userEmail": { "type": "string", "format": "email" },
         "items": { "type": "array" },
         "total": { "type": "number" },
         "status": { "type": "string", "enum": ["pending", "completed", "cancelled"] },
+        "billingInfo": { "type": "object" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["orderId", "userId", "items", "total", "status", "createdAt"]
+      "required": ["orderId", "userId", "userEmail", "items", "total", "status", "billingInfo", "createdAt"]
     }
   },
   "firestore": {

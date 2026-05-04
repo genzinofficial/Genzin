@@ -4,9 +4,14 @@ import { X, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LoginModal: React.FC = () => {
-  const { isLoginModalOpen, setIsLoginModalOpen, login } = useAuth();
+  const { isLoginModalOpen, setIsLoginModalOpen, login, authError, setAuthError } = useAuth();
 
   if (!isLoginModalOpen) return null;
+
+  const handleClose = () => {
+    setIsLoginModalOpen(false);
+    setAuthError(null);
+  };
 
   return (
     <AnimatePresence>
@@ -15,7 +20,7 @@ const LoginModal: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={() => setIsLoginModalOpen(false)}
+          onClick={handleClose}
           className="absolute inset-0 bg-ink/60 backdrop-blur-sm"
         />
         
@@ -32,7 +37,7 @@ const LoginModal: React.FC = () => {
               <h2 className="text-3xl font-display tracking-tight text-left">Welcome Back.</h2>
             </div>
             <button 
-              onClick={() => setIsLoginModalOpen(false)}
+              onClick={handleClose}
               className="p-2 hover:bg-stone rounded-full transition-colors"
             >
               <X size={20} />
@@ -43,6 +48,16 @@ const LoginModal: React.FC = () => {
             <p className="text-gray-500 text-sm mb-8 text-left">
               Select your preferred method to sign in and access your personal curation.
             </p>
+
+            {authError && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 text-red-500 p-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-center"
+              >
+                {authError}
+              </motion.div>
+            )}
 
             {/* Social Login Options */}
             <button

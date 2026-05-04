@@ -3,9 +3,11 @@ import {
   onAuthStateChanged, 
   signInWithPopup, 
   signOut, 
-  User as FirebaseUser 
+  User as FirebaseUser,
+  GoogleAuthProvider
 } from 'firebase/auth';
-import { auth, googleProvider, facebookProvider, appleProvider } from '../lib/firebase';
+import { auth, googleProvider, facebookProvider, appleProvider, db } from '../lib/firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 interface AuthUser {
   uid: string;
@@ -23,6 +25,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   isLoginModalOpen: boolean;
   setIsLoginModalOpen: (open: boolean) => void;
+  authError: string | null;
+  setAuthError: (error: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,9 +36,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
         const authUser: AuthUser = {
           uid: firebaseUser.uid,
@@ -45,6 +51,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
         setUser(authUser);
         setIsAdmin(firebaseUser.email === 'genzin.official@gmail.com');
+
+        // Sync to Firestore
+        try {
+          const userRef = doc(db, 'users', firebaseUser.uid);
+          const userDoc = await getDoc(userRef);
+          
+          if (!userDoc.exists()) {
+            await setDoc(userRef, {
+              userId: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName || 'Genzin Member',
+              photoURL: firebaseUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${firebaseUser.uid}`,
+              createdAt: serverTimestamp()
+            });
+          }
+        } catch (error) {
+          console.error("Error syncing user profile:", error);
+        }
       } else {
         setUser(null);
         setIsAdmin(false);
@@ -56,6 +80,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (providerName: 'google' | 'facebook' | 'apple' = 'google') => {
+    setAuthError(null);
     try {
       let provider;
       switch (providerName) {
@@ -74,9 +99,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       await signInWithPopup(auth, provider);
       setIsLoginModalOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login failed:', error);
-      alert('Login failed. Please try again.');
+      let message = 'Login failed. Please try again.';
+      if (error.code === 'auth/popup-blocked') {
+        message = 'Please allow popups to sign in.';
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        message = 'Verification cancelled.';
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        message = 'An account already exists with a different login method.';
+      }
+      setAuthError(message);
     }
   };
 
@@ -89,7 +122,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loading, login, logout, isLoginModalOpen, setIsLoginModalOpen }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAdmin, 
+      loading, 
+      login, 
+      logout, 
+      isLoginModalOpen, 
+      setIsLoginModalOpen,
+      authError,
+      setAuthError
+    }}>
       {children}
     </AuthContext.Provider>
   );

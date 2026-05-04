@@ -84,11 +84,10 @@ const CartPage: React.FC = () => {
         })),
         total: totalPrice,
         status: 'pending' as const,
-        billingInfo,
-        createdAt: new Date().toISOString()
+        billingInfo
       };
 
-      await createOrder(orderData);
+      await createOrder(orderData as any);
       
       // Sync to Google Sheets via Google Apps Script (keep as is if user still wants it)
       try {

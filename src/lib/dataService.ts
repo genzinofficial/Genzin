@@ -1,11 +1,24 @@
 import { Product, Order } from '../types';
 import { PRODUCTS } from '../constants';
+import { db } from './firebase';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  getDocs, 
+  updateDoc, 
+  query, 
+  where, 
+  serverTimestamp,
+  orderBy
+} from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from './firestoreUtils';
 
 // Simulator for async delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const STORAGE_KEY = 'genzin_products';
-const ORDERS_KEY = 'genzin_orders';
 
 const initializeProducts = () => {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -62,27 +75,49 @@ export const deleteProduct = async (id: string): Promise<void> => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 };
 
-export const getOrders = async (): Promise<Order[]> => {
-  await delay(400);
-  const saved = localStorage.getItem(ORDERS_KEY);
-  return saved ? JSON.parse(saved) : [];
+export const getOrders = async (userId?: string): Promise<Order[]> => {
+  const path = 'orders';
+  try {
+    const ordersCol = collection(db, path);
+    const q = userId 
+      ? query(ordersCol, where('userId', '==', userId), orderBy('createdAt', 'desc'))
+      : query(ordersCol, orderBy('createdAt', 'desc'));
+    
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id
+    })) as Order[];
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
 };
 
 export const createOrder = async (orderData: Omit<Order, 'id'>): Promise<Order> => {
-  await delay(600);
-  const orders = await getOrders();
-  const newOrder = {
-    ...orderData,
-    id: `ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-    createdAt: new Date().toISOString()
-  } as Order;
-  localStorage.setItem(ORDERS_KEY, JSON.stringify([newOrder, ...orders]));
-  return newOrder;
+  const path = 'orders';
+  const orderId = `ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+  try {
+    const orderDoc = doc(db, path, orderId);
+    const finalOrder = {
+      ...orderData,
+      orderId,
+      createdAt: serverTimestamp()
+    };
+    await setDoc(orderDoc, finalOrder);
+    return { ...finalOrder, id: orderId } as unknown as Order;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${path}/${orderId}`);
+    throw error;
+  }
 };
 
 export const updateOrderStatus = async (id: string, status: Order['status']): Promise<void> => {
-  await delay(400);
-  const orders = await getOrders();
-  const updated = orders.map((o: Order) => o.id === id ? { ...o, status } : o);
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(updated));
+  const path = `orders/${id}`;
+  try {
+    const orderDoc = doc(db, 'orders', id);
+    await updateDoc(orderDoc, { status });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
 };

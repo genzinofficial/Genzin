@@ -42,12 +42,14 @@ service cloud.firestore {
       function isValidOrder(data) {
         return data.orderId == orderId &&
                data.userId == request.auth.uid &&
+               data.userEmail is string &&
                data.items is list && data.items.size() > 0 &&
                data.total is number && data.total >= 0 &&
                data.status in ['pending', 'completed', 'cancelled'] &&
+               data.billingInfo is map &&
                data.createdAt == request.time &&
-               data.keys().hasAll(['orderId', 'userId', 'items', 'total', 'status', 'createdAt']) &&
-               data.keys().size() == 6;
+               data.keys().hasAll(['orderId', 'userId', 'userEmail', 'items', 'total', 'status', 'billingInfo', 'createdAt']) &&
+               data.keys().size() == 8;
       }
 
       allow get: if isSignedIn() && (isOwner(existing().userId) || isAdmin());

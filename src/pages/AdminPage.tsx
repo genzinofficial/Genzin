@@ -10,6 +10,12 @@ import { motion, AnimatePresence } from 'motion/react';
 
 type AdminTab = 'products' | 'orders' | 'team';
 
+const formatDate = (date: any) => {
+  if (!date) return 'N/A';
+  if (date.toDate) return date.toDate().toLocaleDateString();
+  return new Date(date).toLocaleDateString();
+};
+
 const AdminPage: React.FC = () => {
   const { isAdmin, loading: authLoading } = useAuth();
   const { formatPrice } = useCurrency();
@@ -167,7 +173,7 @@ const AdminPage: React.FC = () => {
       order.items.map(item => `${item.name} (x${item.quantity})`).join('; '),
       formatPrice(order.total),
       order.status,
-      new Date(order.createdAt).toLocaleDateString()
+      formatDate(order.createdAt)
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -324,7 +330,7 @@ const AdminPage: React.FC = () => {
                       <div className="flex items-center gap-2 text-gray-400">
                         <Calendar size={10} />
                         <span className="text-[10px] font-bold">
-                          {new Date(order.createdAt).toLocaleDateString()}
+                          {formatDate(order.createdAt)}
                         </span>
                       </div>
                     </div>

@@ -189,7 +189,7 @@ const Navbar: React.FC = () => {
               
               <div className="relative">
                 <button 
-                  onClick={() => user ? setShowUserMenu(!showUserMenu) : setIsLoginModalOpen(true)}
+                  onClick={() => user ? setShowUserMenu(!showUserMenu) : navigate('/login')}
                   className="p-3 hover:bg-stone rounded-full transition-all group flex items-center gap-2"
                 >
                   {user ? (
