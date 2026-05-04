@@ -31,7 +31,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-4 text-xs font-bold uppercase text-ink">
               <li><a href="#" className="hover:text-accent transition-colors">Shipping</a></li>
               <li><a href="#" className="hover:text-accent transition-colors">Returns</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Contact</a></li>
+              <li><Link to="/contact" className="hover:text-accent transition-colors">Contact</Link></li>
               <li><a href="#" className="hover:text-accent transition-colors">FAQ</a></li>
             </ul>
           </div>

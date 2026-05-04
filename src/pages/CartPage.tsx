@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, totalPrice, totalItems, clearCart } = useCart();
-  const { user, login } = useAuth();
+  const { user, setIsLoginModalOpen } = useAuth();
   const { formatPrice, convertPrice, currency, symbol } = useCurrency();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -27,6 +27,25 @@ const CartPage: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    // Validation for phone number: max 10 digits, numbers only
+    if (name === 'phone') {
+      const numericValue = value.replace(/\D/g, '');
+      if (numericValue.length <= 10) {
+        setBillingInfo(prev => ({ ...prev, [name]: numericValue }));
+      }
+      return;
+    }
+
+    // Validation for zip code: max 6 digits, numbers only
+    if (name === 'zipCode') {
+      const numericValue = value.replace(/\D/g, '');
+      if (numericValue.length <= 6) {
+        setBillingInfo(prev => ({ ...prev, [name]: numericValue }));
+      }
+      return;
+    }
+
     setBillingInfo(prev => ({ ...prev, [name]: value }));
   };
 
@@ -36,7 +55,7 @@ const CartPage: React.FC = () => {
 
   const handleCheckout = async () => {
     if (!user) {
-      login();
+      setIsLoginModalOpen(true);
       return;
     }
 
@@ -229,17 +248,19 @@ const CartPage: React.FC = () => {
                       onChange={handleInputChange}
                       placeholder="12345"
                       className="w-full bg-stone border-none rounded-2xl px-6 py-4 text-xs font-bold tracking-widest focus:ring-2 focus:ring-accent/20"
+                      maxLength={6}
                     />
                   </div>
                   <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Phone Number</label>
+                    <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Phone Number (10 Digits)</label>
                     <input 
                       type="tel" 
                       name="phone"
                       value={billingInfo.phone}
                       onChange={handleInputChange}
-                      placeholder="+1 234 567 890"
+                      placeholder="1234567890"
                       className="w-full bg-stone border-none rounded-2xl px-6 py-4 text-xs font-bold tracking-widest focus:ring-2 focus:ring-accent/20"
+                      maxLength={10}
                     />
                   </div>
                 </div>

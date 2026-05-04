@@ -12,8 +12,10 @@ interface AuthContextType {
   user: MockUser | null;
   isAdmin: boolean;
   loading: boolean;
-  login: () => void;
+  login: (provider?: 'google' | 'facebook' | 'apple') => void;
   logout: () => void;
+  isLoginModalOpen: boolean;
+  setIsLoginModalOpen: (open: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +24,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<MockUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   useEffect(() => {
     // Check for saved user in localStorage
@@ -34,17 +37,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setLoading(false);
   }, []);
 
-  const login = () => {
+  const login = (provider: 'google' | 'facebook' | 'apple' = 'google') => {
     const mockUser: MockUser = {
-      uid: 'mock-user-123',
+      uid: `mock-${provider}-${Math.random().toString(36).substr(2, 9)}`,
       email: 'genzin.official@gmail.com',
-      displayName: 'Genzin User',
-      photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Genzin',
+      displayName: `Genzin ${provider.charAt(0).toUpperCase() + provider.slice(1)} User`,
+      photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${provider}`,
       emailVerified: true
     };
     setUser(mockUser);
     setIsAdmin(true);
     localStorage.setItem('genzin_user', JSON.stringify(mockUser));
+    setIsLoginModalOpen(false);
   };
 
   const logout = () => {
@@ -54,7 +58,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, isAdmin, loading, login, logout, isLoginModalOpen, setIsLoginModalOpen }}>
       {children}
     </AuthContext.Provider>
   );

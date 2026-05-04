@@ -14,7 +14,7 @@ const ProductDetails: React.FC = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  const { user, login } = useAuth();
+  const { user, setIsLoginModalOpen } = useAuth();
   const { formatPrice } = useCurrency();
   const [quantity, setQuantity] = useState(1);
   const [product, setProduct] = useState<Product | null>(null);
@@ -50,7 +50,7 @@ const ProductDetails: React.FC = () => {
   const toggleWishlist = () => {
     if (!product) return;
     if (!user) {
-      login();
+      setIsLoginModalOpen(true);
       return;
     }
     if (isWishlisted) {
@@ -63,7 +63,7 @@ const ProductDetails: React.FC = () => {
   const handleAddToCart = () => {
     if (!product) return;
     if (!user) {
-      login();
+      setIsLoginModalOpen(true);
       return;
     }
     for(let i=0; i<quantity; i++) addToCart(product);

@@ -15,7 +15,7 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  const { user, login } = useAuth();
+  const { user, setIsLoginModalOpen } = useAuth();
   const { formatPrice } = useCurrency();
 
   const isWishlisted = isInWishlist(product.id);
@@ -23,7 +23,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const toggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!user) {
-      login();
+      setIsLoginModalOpen(true);
       return;
     }
     if (isWishlisted) {
@@ -36,7 +36,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!user) {
-      login();
+      setIsLoginModalOpen(true);
       return;
     }
     addToCart(product);

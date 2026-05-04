@@ -19,6 +19,8 @@ import CartPage from './pages/CartPage';
 import WishlistPage from './pages/WishlistPage';
 import AdminPage from './pages/AdminPage';
 import Editorial from './pages/Editorial';
+import Contact from './pages/Contact';
+import LoginModal from './components/LoginModal';
 import ScrollToTop from './components/ScrollToTop';
 import PageTransition from './components/PageTransition';
 
@@ -31,6 +33,7 @@ const AnimatedRoutes = () => {
           <Route path="/" element={<PageTransition><Home /></PageTransition>} />
           <Route path="/shop" element={<PageTransition><Shop /></PageTransition>} />
           <Route path="/editorial" element={<PageTransition><Editorial /></PageTransition>} />
+          <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
           <Route path="/product/:id" element={<PageTransition><ProductDetails /></PageTransition>} />
           <Route path="/cart" element={<PageTransition><CartPage /></PageTransition>} />
           <Route path="/wishlist" element={<PageTransition><WishlistPage /></PageTransition>} />
@@ -48,6 +51,7 @@ const App: React.FC = () => {
         <WishlistProvider>
           <CartProvider>
             <Router>
+              <LoginModal />
               <ScrollToTop />
               <div className="flex flex-col min-h-screen">
                 <Navbar />

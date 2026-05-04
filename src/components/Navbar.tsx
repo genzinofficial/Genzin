@@ -16,7 +16,7 @@ const Navbar: React.FC = () => {
   const { formatPrice } = useCurrency();
   const { totalItems } = useCart();
   const { wishlist } = useWishlist();
-  const { user, isAdmin, login, logout } = useAuth();
+  const { user, isAdmin, logout, setIsLoginModalOpen } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -107,7 +107,10 @@ const Navbar: React.FC = () => {
                   className="bg-transparent border-none focus:ring-0 text-xs ml-2 w-full font-medium placeholder:text-gray-400"
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                  <button 
+                    onClick={() => setSearchQuery('')} 
+                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  >
                     <X size={12} className="text-gray-400" />
                   </button>
                 )}
@@ -117,48 +120,61 @@ const Navbar: React.FC = () => {
               <AnimatePresence>
                 {isSearchFocused && searchQuery.trim().length > 0 && (
                   <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[60]"
+                    initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="absolute top-full left-0 right-[-100px] mt-4 bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden z-[60]"
                   >
                     {searchResults.length > 0 ? (
-                      <div className="py-2">
-                        <div className="px-4 py-2 text-[10px] font-bold text-gray-400 tracking-widest uppercase border-b border-gray-50">Results</div>
-                        {searchResults.map(product => (
-                          <Link 
-                            key={product.id}
-                            to={`/product/${product.id}`}
-                            onClick={() => {
-                              setSearchQuery('');
-                              setIsSearchFocused(false);
-                            }}
-                            className="flex items-center gap-3 px-4 py-3 hover:bg-stone transition-all group"
-                          >
-                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-gray-100 shrink-0">
-                              <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="text-xs font-bold text-ink truncate group-hover:text-accent transition-colors">{product.name}</div>
-                              <div className="text-[10px] text-gray-400 uppercase tracking-widest">{product.category}</div>
-                            </div>
-                            <div className="text-xs font-mono font-bold text-ink">{formatPrice(product.price)}</div>
-                          </Link>
-                        ))}
+                      <div className="p-2">
+                        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-50 mb-2">
+                          <span className="text-[9px] font-black text-gray-400 tracking-[0.3em] uppercase">Suggestions</span>
+                          <span className="text-[9px] font-bold text-accent uppercase tracking-widest">{searchResults.length} Match{searchResults.length > 1 ? 'es' : ''}</span>
+                        </div>
+                        <div className="space-y-1">
+                          {searchResults.map(product => (
+                            <Link 
+                              key={product.id}
+                              to={`/product/${product.id}`}
+                              onClick={() => {
+                                setSearchQuery('');
+                                setIsSearchFocused(false);
+                              }}
+                              className="flex items-center gap-4 px-4 py-3 hover:bg-stone rounded-2xl transition-all group"
+                            >
+                              <div className="w-14 h-14 bg-stone rounded-xl overflow-hidden border border-gray-100 shrink-0 relative">
+                                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                <div className="absolute inset-0 bg-ink/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[11px] font-bold text-ink truncate group-hover:text-accent transition-colors mb-1 uppercase tracking-wider">{product.name}</div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest bg-stone px-2 py-0.5 rounded-full">{product.category}</span>
+                                  {product.isNew && <span className="text-[8px] font-black text-accent uppercase tracking-tighter">New Arrival</span>}
+                                </div>
+                              </div>
+                              <div className="text-[11px] font-mono font-bold text-ink">{formatPrice(product.price)}</div>
+                            </Link>
+                          ))}
+                        </div>
                         <Link 
                           to={`/shop?q=${searchQuery}`}
                           onClick={() => {
                             setSearchQuery('');
                             setIsSearchFocused(false);
                           }}
-                          className="flex items-center justify-center gap-2 px-4 py-3 bg-stone/50 hover:bg-accent hover:text-white transition-all text-[10px] font-bold tracking-widest uppercase"
+                          className="mt-2 flex items-center justify-center gap-2 w-full py-4 bg-ink text-white hover:bg-accent transition-all text-[9px] font-black tracking-[0.3em] uppercase rounded-2xl"
                         >
                           View All results <ExternalLink size={10} />
                         </Link>
                       </div>
                     ) : (
-                      <div className="p-8 text-center">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No matches found</p>
+                      <div className="p-10 text-center">
+                        <div className="w-12 h-12 bg-stone flex items-center justify-center rounded-full mx-auto mb-4">
+                          <Search size={16} className="text-gray-300" />
+                        </div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">No matching artifacts found</p>
                       </div>
                     )}
                   </motion.div>
@@ -173,7 +189,7 @@ const Navbar: React.FC = () => {
               
               <div className="relative">
                 <button 
-                  onClick={() => user ? setShowUserMenu(!showUserMenu) : login()}
+                  onClick={() => user ? setShowUserMenu(!showUserMenu) : setIsLoginModalOpen(true)}
                   className="p-3 hover:bg-stone rounded-full transition-all group flex items-center gap-2"
                 >
                   {user ? (
@@ -266,7 +282,11 @@ const Navbar: React.FC = () => {
                 </div>
                 
                 {searchQuery.trim().length > 0 && (
-                  <div className="mt-4 space-y-2 max-h-[300px] overflow-y-auto">
+                  <div className="mt-4 space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                    <div className="flex justify-between items-center px-4 mb-2">
+                      <span className="text-[8px] font-black text-gray-400 uppercase tracking-[0.2em]">Live Search</span>
+                      <span className="text-[8px] font-bold text-accent uppercase tracking-widest">{searchResults.length} Results</span>
+                    </div>
                     {searchResults.map(product => (
                       <Link 
                         key={product.id}
@@ -275,18 +295,35 @@ const Navbar: React.FC = () => {
                           setSearchQuery('');
                           setIsOpen(false);
                         }}
-                        className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-50"
+                        className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm"
                       >
-                        <img src={product.image} alt={product.name} className="w-8 h-8 rounded object-cover" />
+                        <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-gray-50">
+                          <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-bold text-ink truncate uppercase">{product.name}</div>
-                          <div className="text-[8px] text-gray-400 uppercase tracking-widest">{product.category}</div>
+                          <div className="text-[10px] font-bold text-ink truncate uppercase tracking-wider">{product.name}</div>
+                          <div className="text-[8px] text-gray-400 uppercase tracking-widest bg-stone inline-block px-2 py-0.5 rounded-full mt-1">{product.category}</div>
                         </div>
                         <div className="text-[10px] font-mono font-bold text-ink">{formatPrice(product.price)}</div>
                       </Link>
                     ))}
+                    {searchResults.length > 0 && (
+                      <Link 
+                        to={`/shop?q=${searchQuery}`}
+                        onClick={() => {
+                          setSearchQuery('');
+                          setIsOpen(false);
+                        }}
+                        className="flex items-center justify-center gap-2 w-full py-4 mt-2 bg-ink text-white rounded-2xl text-[9px] font-black tracking-[0.3em] uppercase"
+                      >
+                        Explore all results <ExternalLink size={10} />
+                      </Link>
+                    )}
                     {searchResults.length === 0 && (
-                      <p className="text-[9px] font-bold text-gray-400 text-center py-4">NO MATCHES</p>
+                      <div className="py-12 text-center bg-stone rounded-2xl">
+                         <Search size={20} className="text-gray-300 mx-auto mb-3" />
+                         <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">No matching products</p>
+                      </div>
                     )}
                   </div>
                 )}
@@ -341,7 +378,7 @@ const Navbar: React.FC = () => {
                   </div>
                 ) : (
                   <button 
-                    onClick={() => { login(); setIsOpen(false); }}
+                    onClick={() => { setIsLoginModalOpen(true); setIsOpen(false); }}
                     className="w-full bg-ink text-white py-4 rounded-2xl font-bold tracking-widest text-[10px] uppercase flex items-center justify-center gap-3"
                   >
                     <UserIcon size={14} />
