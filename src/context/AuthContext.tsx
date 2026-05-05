@@ -78,6 +78,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (providerName: 'google' | 'facebook' | 'apple' = 'google') => {
     setAuthError(null);
+    setLoading(true);
     try {
       let provider;
       switch (providerName) {
@@ -94,7 +95,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           provider = googleProvider;
       }
 
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      console.log('Login success:', result.user.email);
     } catch (error: any) {
       console.error('Login failed:', error);
       let message = 'Login failed. Please try again.';
@@ -104,8 +106,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         message = 'Verification cancelled.';
       } else if (error.code === 'auth/account-exists-with-different-credential') {
         message = 'An account already exists with a different login method.';
+      } else if (error.code === 'auth/network-request-failed') {
+        message = 'Network error. Please check your connection.';
       }
       setAuthError(message);
+    } finally {
+      setLoading(false);
     }
   };
 
