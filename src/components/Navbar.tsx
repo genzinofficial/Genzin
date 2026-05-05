@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Search, Menu, X, Heart, User as UserIcon, LogOut, Settings, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useCart } from '../context/CartContext';
@@ -14,9 +14,10 @@ import CurrencySwitcher from './CurrencySwitcher';
 
 const Navbar: React.FC = () => {
   const { formatPrice } = useCurrency();
+  const navigate = useNavigate();
   const { totalItems } = useCart();
   const { wishlist } = useWishlist();
-  const { user, isAdmin, logout, setIsLoginModalOpen } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -378,7 +379,7 @@ const Navbar: React.FC = () => {
                   </div>
                 ) : (
                   <button 
-                    onClick={() => { setIsLoginModalOpen(true); setIsOpen(false); }}
+                    onClick={() => { navigate('/login'); setIsOpen(false); }}
                     className="w-full bg-ink text-white py-4 rounded-2xl font-bold tracking-widest text-[10px] uppercase flex items-center justify-center gap-3"
                   >
                     <UserIcon size={14} />

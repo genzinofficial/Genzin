@@ -23,8 +23,6 @@ interface AuthContextType {
   loading: boolean;
   login: (provider?: 'google' | 'facebook' | 'apple') => Promise<void>;
   logout: () => Promise<void>;
-  isLoginModalOpen: boolean;
-  setIsLoginModalOpen: (open: boolean) => void;
   authError: string | null;
   setAuthError: (error: string | null) => void;
 }
@@ -35,7 +33,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -98,7 +95,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       await signInWithPopup(auth, provider);
-      setIsLoginModalOpen(false);
     } catch (error: any) {
       console.error('Login failed:', error);
       let message = 'Login failed. Please try again.';
@@ -128,8 +124,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       loading, 
       login, 
       logout, 
-      isLoginModalOpen, 
-      setIsLoginModalOpen,
       authError,
       setAuthError
     }}>

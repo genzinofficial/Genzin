@@ -21,7 +21,6 @@ import AdminPage from './pages/AdminPage';
 import Editorial from './pages/Editorial';
 import Contact from './pages/Contact';
 import LoginPage from './pages/LoginPage';
-import LoginModal from './components/LoginModal';
 import ScrollToTop from './components/ScrollToTop';
 import PageTransition from './components/PageTransition';
 
@@ -53,7 +52,6 @@ const App: React.FC = () => {
         <WishlistProvider>
           <CartProvider>
             <Router>
-              <LoginModal />
               <ScrollToTop />
               <div className="flex flex-col min-h-screen">
                 <Navbar />

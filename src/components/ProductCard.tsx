@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Product } from '../types';
 import { motion } from 'motion/react';
 import { useCart } from '../context/CartContext';
@@ -13,9 +13,10 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  const navigate = useNavigate();
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  const { user, setIsLoginModalOpen } = useAuth();
+  const { user } = useAuth();
   const { formatPrice } = useCurrency();
 
   const isWishlisted = isInWishlist(product.id);
@@ -23,7 +24,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const toggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!user) {
-      setIsLoginModalOpen(true);
+      navigate('/login');
       return;
     }
     if (isWishlisted) {
@@ -36,7 +37,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!user) {
-      setIsLoginModalOpen(true);
+      navigate('/login');
       return;
     }
     addToCart(product);

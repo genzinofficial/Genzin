@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, totalPrice, totalItems, clearCart } = useCart();
-  const { user, setIsLoginModalOpen } = useAuth();
+  const { user } = useAuth();
   const { formatPrice, convertPrice, currency, symbol } = useCurrency();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -55,7 +55,7 @@ const CartPage: React.FC = () => {
 
   const handleCheckout = async () => {
     if (!user) {
-      setIsLoginModalOpen(true);
+      navigate('/login', { state: { from: { pathname: '/cart' } } });
       return;
     }
 
