@@ -219,6 +219,14 @@ const Navbar: React.FC = () => {
                           Admin Panel
                         </Link>
                       )}
+                      <Link 
+                        to="/profile" 
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-3 px-6 py-3 text-xs font-bold hover:bg-stone transition-colors text-ink"
+                      >
+                        <UserIcon size={14} />
+                        Profile
+                      </Link>
                       <button 
                         onClick={() => {
                           logout();
@@ -363,7 +371,20 @@ const Navbar: React.FC = () => {
                       <img src={user.photoURL || ''} alt="avatar" className="w-10 h-10 rounded-full" />
                       <div>
                         <p className="text-xs font-bold text-ink">{user.displayName}</p>
-                        <button onClick={() => { logout(); setIsOpen(false); }} className="text-[10px] font-bold text-red-500 uppercase tracking-widest mt-1">Logout</button>
+                        <div className="flex gap-4 mt-2">
+                          <button 
+                            onClick={() => { navigate('/profile'); setIsOpen(false); }} 
+                            className="text-[10px] font-bold text-accent uppercase tracking-widest"
+                          >
+                            Profile
+                          </button>
+                          <button 
+                            onClick={() => { logout(); setIsOpen(false); }} 
+                            className="text-[10px] font-bold text-red-500 uppercase tracking-widest"
+                          >
+                            Logout
+                          </button>
+                        </div>
                       </div>
                     </div>
                     {isAdmin && (
