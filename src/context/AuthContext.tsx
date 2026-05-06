@@ -98,17 +98,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const result = await signInWithPopup(auth, provider);
       console.log('Login success:', result.user.email);
     } catch (error: any) {
-      console.error('Login failed:', error);
+      console.error('Login failed details:', {
+        code: error.code,
+        message: error.message,
+        domain: window.location.hostname
+      });
+      
       let message = 'Login failed. Please try again.';
+      
       if (error.code === 'auth/popup-blocked') {
-        message = 'Please allow popups to sign in.';
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        message = 'Verification cancelled.';
+        message = 'Login popup was blocked by your browser. Please allow popups for this site.';
+      } else if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+        message = 'Login was cancelled.';
       } else if (error.code === 'auth/account-exists-with-different-credential') {
-        message = 'An account already exists with a different login method.';
+        message = 'An account already exists with a different login method. Please use the original provider.';
       } else if (error.code === 'auth/network-request-failed') {
-        message = 'Network error. Please check your connection.';
+        message = 'Network error. Please check your internet connection.';
+      } else if (error.code === 'auth/unauthorized-domain') {
+        message = `Domain "${window.location.hostname}" is not authorized. Add it to Firebase Console > Authentication > Settings > Authorized Domains.`;
+      } else if (error.code === 'auth/operation-not-allowed') {
+        message = 'This login method is not enabled in your Firebase project.';
+      } else if (error.code === 'auth/internal-error') {
+        message = 'An internal authentication error occurred. Please try again later.';
+      } else {
+        message = `${error.message.replace('Firebase:', '').trim()} (${error.code})`;
       }
+      
       setAuthError(message);
     } finally {
       setLoading(false);
