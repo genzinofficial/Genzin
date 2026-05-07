@@ -30,9 +30,9 @@ const Footer: React.FC = () => {
             <h3 className="text-[10px] font-bold tracking-[0.2em] mb-8 uppercase text-gray-400">Support</h3>
             <ul className="space-y-4 text-xs font-bold uppercase text-ink">
               <li><a href="#" className="hover:text-accent transition-colors">Shipping</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Returns</a></li>
+              <li><Link to="/returns" className="hover:text-accent transition-colors">Returns</Link></li>
               <li><Link to="/contact" className="hover:text-accent transition-colors">Contact</Link></li>
-              <li><a href="#" className="hover:text-accent transition-colors">FAQ</a></li>
+              <li><Link to="/faq" className="hover:text-accent transition-colors">FAQ</Link></li>
             </ul>
           </div>
 

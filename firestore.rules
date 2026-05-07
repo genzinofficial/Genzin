@@ -35,6 +35,26 @@ service cloud.firestore {
         incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL']) &&
         incoming().displayName is string && incoming().displayName.size() <= 100
       );
+
+      // User Addresses Subcollection
+      match /addresses/{addressId} {
+        function isValidAddress(data) {
+          return data.userId == userId &&
+                 data.fullName is string && data.fullName.size() <= 100 &&
+                 data.street is string && data.street.size() <= 200 &&
+                 data.city is string && data.city.size() <= 100 &&
+                 data.country is string && data.country.size() <= 100 &&
+                 data.keys().hasAll(['userId', 'fullName', 'street', 'city', 'country']) &&
+                 data.keys().size() >= 5;
+        }
+
+        allow list, get: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isEmailVerified() && isValidAddress(incoming());
+        allow update: if isOwner(userId) && isValidAddress(incoming()) && (
+          incoming().diff(existing()).affectedKeys().hasAny(['fullName', 'street', 'city', 'state', 'zipCode', 'country', 'phone', 'isDefault', 'updatedAt'])
+        );
+        allow delete: if isOwner(userId) || isAdmin();
+      }
     }
 
     // 2. Orders Collection

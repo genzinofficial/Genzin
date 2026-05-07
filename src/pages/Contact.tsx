@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Mail, Phone, MapPin, Send, Instagram, Twitter, Youtube } from 'lucide-react';
+import { Mail, Send, Instagram, Twitter, Youtube } from 'lucide-react';
 
 const Contact: React.FC = () => {
   const [formState, setFormState] = useState({
@@ -56,30 +56,8 @@ const Contact: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-[10px] font-bold tracking-widest text-gray-400 uppercase mb-2">Email</h3>
-                <p className="font-bold text-lg">concierge@genzin.com</p>
+                <p className="font-bold text-lg">genzin.official@gmail.com</p>
                 <p className="text-sm text-gray-500 mt-1">Response within 24 hours</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-6">
-              <div className="w-12 h-12 bg-stone flex items-center justify-center rounded-2xl shrink-0">
-                <Phone size={20} className="text-ink" />
-              </div>
-              <div>
-                <h3 className="text-[10px] font-bold tracking-widest text-gray-400 uppercase mb-2">Phone</h3>
-                <p className="font-bold text-lg">+1 (888) GENZIN-0</p>
-                <p className="text-sm text-gray-500 mt-1">Mon - Fri, 9am - 6pm EST</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-6">
-              <div className="w-12 h-12 bg-stone flex items-center justify-center rounded-2xl shrink-0">
-                <MapPin size={20} className="text-ink" />
-              </div>
-              <div>
-                <h3 className="text-[10px] font-bold tracking-widest text-gray-400 uppercase mb-2">Showroom</h3>
-                <p className="font-bold text-lg">742 Fifth Avenue</p>
-                <p className="text-sm text-gray-500 mt-1">New York, NY 10019</p>
               </div>
             </div>
           </div>
@@ -199,27 +177,6 @@ const Contact: React.FC = () => {
           <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none"></div>
         </motion.div>
       </div>
-
-      {/* Map Section Placeholder */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        viewport={{ once: true }}
-        className="mt-32 h-[500px] w-full bg-stone rounded-[40px] overflow-hidden grayscale relative flex items-center justify-center border border-gray-100"
-      >
-        <div className="absolute inset-0 tech-grid opacity-20"></div>
-        <div className="text-center relative z-10 px-6">
-          <div className="w-16 h-16 bg-accent text-white flex items-center justify-center rounded-full mx-auto mb-6">
-            <MapPin size={24} />
-          </div>
-          <h3 className="text-2xl font-display mb-4">Visit our Manhattan Showroom</h3>
-          <p className="text-sm text-gray-500 max-w-sm mx-auto">
-            Experience the collections in person. <br />
-            742 Fifth Avenue, New York, NY 10019
-          </p>
-        </div>
-      </motion.div>
     </div>
   );
 };

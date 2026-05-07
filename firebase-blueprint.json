@@ -28,6 +28,24 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["orderId", "userId", "userEmail", "items", "total", "status", "billingInfo", "createdAt"]
+    },
+    "Address": {
+      "title": "User Address",
+      "description": "Shipping and billing address",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "zipCode": { "type": "string" },
+        "country": { "type": "string" },
+        "phone": { "type": "string" },
+        "isDefault": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "fullName", "street", "city", "country"]
     }
   },
   "firestore": {
@@ -38,6 +56,10 @@
     "/orders/{orderId}": {
       "schema": "Order",
       "description": "Purchase records"
+    },
+    "/users/{userId}/addresses/{addressId}": {
+      "schema": "Address",
+      "description": "User saved addresses"
     }
   }
 }

@@ -25,10 +25,27 @@ export interface OrderItem {
 export interface BillingInfo {
   firstName: string;
   lastName: string;
+  email: string;
   address: string;
   city: string;
+  state: string;
   zipCode: string;
+  country: string;
   phone: string;
+}
+
+export interface UserAddress {
+  id?: string;
+  userId: string;
+  fullName: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  phone: string;
+  isDefault: boolean;
+  updatedAt?: any;
 }
 
 export interface Order {

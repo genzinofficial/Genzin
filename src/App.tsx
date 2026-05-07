@@ -22,6 +22,8 @@ import Editorial from './pages/Editorial';
 import Contact from './pages/Contact';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
+import FAQ from './pages/FAQ';
+import Returns from './pages/Returns';
 import ScrollToTop from './components/ScrollToTop';
 import PageTransition from './components/PageTransition';
 
@@ -35,6 +37,8 @@ const AnimatedRoutes = () => {
           <Route path="/shop" element={<PageTransition><Shop /></PageTransition>} />
           <Route path="/editorial" element={<PageTransition><Editorial /></PageTransition>} />
           <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
+          <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
+          <Route path="/returns" element={<PageTransition><Returns /></PageTransition>} />
           <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
           <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
           <Route path="/product/:id" element={<PageTransition><ProductDetails /></PageTransition>} />

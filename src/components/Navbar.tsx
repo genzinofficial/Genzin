@@ -13,7 +13,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import CurrencySwitcher from './CurrencySwitcher';
 
 const Navbar: React.FC = () => {
-  const { formatPrice } = useCurrency();
+  const { formatPrice, currency, setCurrency } = useCurrency();
   const navigate = useNavigate();
   const { totalItems } = useCart();
   const { wishlist } = useWishlist();
@@ -338,12 +338,31 @@ const Navbar: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-2">
+              <div className="flex flex-col gap-4 border-b border-gray-100 pb-8 mb-2">
                  <div className="flex items-center gap-3">
                    <div className="w-6 h-[1px] bg-accent"></div>
-                   <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Currency</span>
+                   <span className="text-[10px] font-black tracking-[0.2em] text-gray-400 uppercase italic">Global Settings</span>
                  </div>
-                 <CurrencySwitcher />
+                 
+                 <div className="grid grid-cols-5 gap-2">
+                   {['USD', 'INR', 'EUR', 'GBP', 'JPY'].map((curr) => {
+                     const flags: Record<string, string> = { USD: '🇺🇸', INR: '🇮🇳', EUR: '🇪🇺', GBP: '🇬🇧', JPY: '🇯🇵' };
+                     return (
+                       <button
+                         key={curr}
+                         onClick={() => setCurrency(curr)}
+                         className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${
+                           currency === curr 
+                             ? 'bg-ink text-white border-ink shadow-lg shadow-ink/20' 
+                             : 'bg-white border-gray-100 text-gray-400'
+                         }`}
+                       >
+                         <span className="text-lg mb-1">{flags[curr]}</span>
+                         <span className="text-[9px] font-black tracking-widest">{curr}</span>
+                       </button>
+                     );
+                   })}
+                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 border-b border-gray-100 pb-8">

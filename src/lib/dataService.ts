@@ -1,4 +1,4 @@
-import { Product, Order } from '../types';
+import { Product, Order, UserAddress } from '../types';
 import { PRODUCTS } from '../constants';
 import { db } from './firebase';
 import { 
@@ -8,6 +8,7 @@ import {
   getDoc, 
   getDocs, 
   updateDoc, 
+  deleteDoc,
   query, 
   where, 
   serverTimestamp,
@@ -119,5 +120,50 @@ export const updateOrderStatus = async (id: string, status: Order['status']): Pr
     await updateDoc(orderDoc, { status });
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+};
+
+// Address Services
+export const getUserAddresses = async (userId: string): Promise<UserAddress[]> => {
+  const path = `users/${userId}/addresses`;
+  try {
+    const addrCol = collection(db, 'users', userId, 'addresses');
+    const q = query(addrCol, orderBy('isDefault', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id
+    })) as UserAddress[];
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+};
+
+export const saveUserAddress = async (userId: string, addressData: Omit<UserAddress, 'id'>, id?: string): Promise<UserAddress> => {
+  const addressId = id || Math.random().toString(36).substr(2, 9).toUpperCase();
+  const path = `users/${userId}/addresses/${addressId}`;
+  try {
+    const addrDoc = doc(db, 'users', userId, 'addresses', addressId);
+    const finalData = {
+      ...addressData,
+      updatedAt: serverTimestamp()
+    };
+    await setDoc(addrDoc, finalData);
+    return { ...finalData, id: addressId } as unknown as UserAddress;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+    throw error;
+  }
+};
+
+export const deleteUserAddress = async (userId: string, addressId: string): Promise<void> => {
+  const path = `users/${userId}/addresses/${addressId}`;
+  try {
+    const addrDoc = doc(db, 'users', userId, 'addresses', addressId);
+    await deleteDoc(addrDoc);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+    throw error;
   }
 };

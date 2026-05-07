@@ -142,9 +142,15 @@ const ProductDetails: React.FC = () => {
                <span className="text-accent text-[10px] font-bold tracking-[0.3em] uppercase italic">{product.category}</span>
             </div>
             <h1 className="text-5xl font-display tracking-tight text-ink italic leading-tight">{product.name}</h1>
-            <div className="flex items-end justify-between border-b border-gray-100 pb-6">
-               <p className="text-3xl font-bold text-gray-900">{formatPrice(product.price)}</p>
-               <span className="text-[10px] font-mono text-gray-300">ID: {product.id}</span>
+            <div className="flex items-end justify-between border-b border-gray-100 pb-8">
+               <div className="flex flex-col">
+                 <p className="text-4xl font-display italic tracking-tight text-ink">{formatPrice(product.price)}</p>
+                 <div className="flex items-center gap-2 mt-2">
+                   <div className="w-8 h-[1px] bg-accent/20"></div>
+                   <span className="text-[10px] font-black tracking-widest text-gray-400 uppercase">VAT Included</span>
+                 </div>
+               </div>
+               <span className="text-[10px] font-mono text-gray-300 bg-stone/50 px-3 py-1 rounded-full uppercase tracking-widest">A-NR: {product.id}</span>
             </div>
           </div>
 

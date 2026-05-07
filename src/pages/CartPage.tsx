@@ -5,8 +5,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, ArrowRight, ShoppingBag, CheckCircle2, MapPin } from 'lucide-react';
 import { BillingInfo } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
-import { createOrder } from '../lib/dataService';
+import { createOrder, getUserAddresses, saveUserAddress } from '../lib/dataService';
 import { motion, AnimatePresence } from 'motion/react';
+import { UserAddress } from '../types';
 
 const CartPage: React.FC = () => {
   const { cart, removeFromCart, updateQuantity, totalPrice, totalItems, clearCart } = useCart();
@@ -15,15 +16,59 @@ const CartPage: React.FC = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [checkoutStep, setCheckoutStep] = useState<'review' | 'billing'>('review');
   const [billingInfo, setBillingInfo] = useState<BillingInfo>({
     firstName: '',
     lastName: '',
+    email: '',
     address: '',
     city: '',
+    state: '',
     zipCode: '',
+    country: 'USA',
     phone: ''
   });
+
+  // Auto-fill identity and address if user is logged in
+  React.useEffect(() => {
+    if (user && checkoutStep === 'billing') {
+      // 1. Auto-fill Identity (Name & Email)
+      setBillingInfo(prev => ({
+        ...prev,
+        firstName: prev.firstName || (user.displayName ? user.displayName.split(' ')[0] : ''),
+        lastName: prev.lastName || (user.displayName ? user.displayName.split(' ').slice(1).join(' ') : ''),
+        email: prev.email || user.email || ''
+      }));
+
+      // 2. Auto-fill Address if saved addresses exist
+      const fetchAndFillAddress = async () => {
+        try {
+          const addresses = await getUserAddresses(user.uid);
+          const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
+          
+          if (defaultAddr) {
+            const names = defaultAddr.fullName.split(' ');
+            setBillingInfo(prev => ({
+              ...prev,
+              firstName: prev.firstName || names[0] || '',
+              lastName: prev.lastName || names.slice(1).join(' ') || '',
+              address: prev.address || defaultAddr.street,
+              city: prev.city || defaultAddr.city,
+              state: prev.state || defaultAddr.state,
+              zipCode: prev.zipCode || defaultAddr.zipCode,
+              country: prev.country || defaultAddr.country,
+              phone: prev.phone || defaultAddr.phone
+            }));
+          }
+        } catch (error) {
+          console.error("Error auto-filling address:", error);
+        }
+      };
+
+      fetchAndFillAddress();
+    }
+  }, [user, checkoutStep]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -88,6 +133,25 @@ const CartPage: React.FC = () => {
       };
 
       await createOrder(orderData as any);
+      
+      // Save address if rememberMe is selected
+      if (rememberMe) {
+        try {
+          await saveUserAddress(user.uid, {
+            userId: user.uid,
+            fullName: `${billingInfo.firstName} ${billingInfo.lastName}`,
+            street: billingInfo.address,
+            city: billingInfo.city,
+            state: billingInfo.state || 'N/A',
+            zipCode: billingInfo.zipCode,
+            country: billingInfo.country || 'USA',
+            phone: billingInfo.phone,
+            isDefault: true
+          });
+        } catch (error) {
+          console.warn("Failed to remember address:", error);
+        }
+      }
       
       // Sync to Google Sheets via Google Apps Script (keep as is if user still wants it)
       try {
@@ -217,6 +281,17 @@ const CartPage: React.FC = () => {
                     />
                   </div>
                   <div className="md:col-span-2 space-y-2">
+                    <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Email Confirmation</label>
+                    <input 
+                      type="email" 
+                      name="email"
+                      value={billingInfo.email}
+                      onChange={handleInputChange}
+                      placeholder="john@example.com"
+                      className="w-full bg-stone border-none rounded-2xl px-6 py-4 text-xs font-bold tracking-widest focus:ring-2 focus:ring-accent/20"
+                    />
+                  </div>
+                  <div className="md:col-span-2 space-y-2">
                     <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Address</label>
                     <input 
                       type="text" 
@@ -239,6 +314,17 @@ const CartPage: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-2">
+                    <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">State/Province</label>
+                    <input 
+                      type="text" 
+                      name="state"
+                      value={billingInfo.state}
+                      onChange={handleInputChange}
+                      placeholder="NY"
+                      className="w-full bg-stone border-none rounded-2xl px-6 py-4 text-xs font-bold tracking-widest focus:ring-2 focus:ring-accent/20"
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Zip Code</label>
                     <input 
                       type="text" 
@@ -248,6 +334,17 @@ const CartPage: React.FC = () => {
                       placeholder="12345"
                       className="w-full bg-stone border-none rounded-2xl px-6 py-4 text-xs font-bold tracking-widest focus:ring-2 focus:ring-accent/20"
                       maxLength={6}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Country</label>
+                    <input 
+                      type="text" 
+                      name="country"
+                      value={billingInfo.country}
+                      onChange={handleInputChange}
+                      placeholder="USA"
+                      className="w-full bg-stone border-none rounded-2xl px-6 py-4 text-xs font-bold tracking-widest focus:ring-2 focus:ring-accent/20"
                     />
                   </div>
                   <div className="md:col-span-2 space-y-2">
@@ -261,6 +358,24 @@ const CartPage: React.FC = () => {
                       className="w-full bg-stone border-none rounded-2xl px-6 py-4 text-xs font-bold tracking-widest focus:ring-2 focus:ring-accent/20"
                       maxLength={10}
                     />
+                  </div>
+                  <div className="md:col-span-2 pt-4">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <div className="relative">
+                        <input 
+                          type="checkbox" 
+                          checked={rememberMe}
+                          onChange={(e) => setRememberMe(e.target.checked)}
+                          className="sr-only"
+                        />
+                        <div className={`w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center ${rememberMe ? 'bg-accent border-accent shadow-lg shadow-accent/20' : 'border-gray-200 bg-white group-hover:border-accent/40'}`}>
+                          {rememberMe && <CheckCircle2 size={12} className="text-white" />}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-[0.1em] text-gray-500 group-hover:text-ink transition-colors italic">
+                        Remember these details for my next curation
+                      </span>
+                    </label>
                   </div>
                 </div>
               </motion.section>
@@ -289,7 +404,10 @@ const CartPage: React.FC = () => {
                       <div>
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-base font-bold tracking-tight text-ink uppercase">{item.name}</h3>
-                          <p className="font-bold text-ink">{formatPrice(item.price)}</p>
+                          <div className="flex flex-col items-end">
+                            <p className="font-display italic text-lg tracking-tight text-ink">{formatPrice(item.price)}</p>
+                            <div className="w-4 h-[1px] bg-accent/20 mt-1"></div>
+                          </div>
                         </div>
                         <p className="text-[10px] text-gray-400 tracking-widest uppercase mb-6 font-bold">{item.category}</p>
                         
@@ -320,22 +438,22 @@ const CartPage: React.FC = () => {
           <div className="bg-white p-10 space-y-8 premium-shadow rounded-3xl border border-gray-50">
             <h2 className="text-2xl font-display italic tracking-tight border-b border-gray-100 pb-4">Summary</h2>
             
-            <div className="space-y-4 text-xs font-bold tracking-widest uppercase">
+            <div className="space-y-4 text-[10px] font-black tracking-[0.2em] uppercase italic">
               <div className="flex justify-between text-gray-400">
-                <span>Subtotal</span>
-                <span>{formatPrice(totalPrice)}</span>
+                <span>Refinement Subtotal</span>
+                <span className="font-mono">{formatPrice(totalPrice)}</span>
               </div>
               <div className="flex justify-between text-gray-400">
-                <span>Shipping</span>
-                <span className="text-accent">FREE</span>
+                <span>Curation & Delivery</span>
+                <span className="text-accent">Complementary</span>
               </div>
-              <div className="flex justify-between text-ink text-sm font-bold pt-4 border-t border-gray-100">
-                <span>Total</span>
-                <span>{formatPrice(totalPrice)}</span>
+              <div className="flex justify-between text-ink pt-6 border-t border-gray-100 items-baseline">
+                <span className="text-sm">Total Valuation</span>
+                <span className="text-2xl font-display italic tracking-tight">{formatPrice(totalPrice)}</span>
               </div>
               {currency !== 'USD' && (
-                <div className="text-[9px] text-gray-400 text-right font-medium italic mt-2">
-                  Approximately {totalPrice.toFixed(2)} USD
+                <div className="text-[9px] text-gray-400 text-right font-medium italic mt-4 lowercase tracking-tight">
+                  approximate value {totalPrice.toFixed(2)} usd
                 </div>
               )}
             </div>

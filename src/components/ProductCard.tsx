@@ -86,10 +86,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <Link to={`/product/${product.id}`} className="text-xs sm:text-sm font-bold tracking-tight text-ink hover:text-accent transition-colors uppercase leading-tight truncate w-full sm:w-auto">
             {product.name}
           </Link>
-          <span className="text-xs sm:text-sm font-semibold text-gray-900 shrink-0">{formatPrice(product.price)}</span>
+          <div className="flex flex-col items-end shrink-0">
+            <span className="text-sm font-display italic tracking-tight text-ink">{formatPrice(product.price)}</span>
+            <div className="w-4 h-[1px] bg-accent/20 mt-1"></div>
+          </div>
         </div>
         <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
-          <span className="text-[8px] sm:text-[10px] font-mono tracking-widest text-gray-400 font-bold uppercase">
+          <span className="text-[8px] sm:text-[10px] font-black tracking-widest text-gray-400 uppercase italic">
             {product.category}
           </span>
         </div>
