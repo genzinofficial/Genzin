@@ -3,12 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import { Product, Order } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
 import { 
-  getProducts, getOrders, addProduct, updateProduct, deleteProduct, updateOrderStatus 
+  getProducts, getOrders, addProduct, updateProduct, deleteProduct, updateOrderStatus,
+  getAllUsers, setUserAccess
 } from '../lib/dataService';
-import { Plus, Trash2, Edit2, X, Check, Package, Image as ImageIcon, Layout, ShoppingBag, Mail, Calendar, CreditCard, ChevronDown, UserPlus, Shield, Info, Download, ClipboardList } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Check, Package, Image as ImageIcon, Layout, ShoppingBag, Mail, Calendar, CreditCard, ChevronDown, UserPlus, Shield, Info, Download, ClipboardList, UserMinus, UserCheck, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-type AdminTab = 'products' | 'orders' | 'team';
+type AdminTab = 'products' | 'orders' | 'team' | 'users';
 
 const formatDate = (date: any) => {
   if (!date) return 'N/A';
@@ -22,6 +23,7 @@ const AdminPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [admins, setAdmins] = useState<{ id: string; email: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,6 +33,7 @@ const AdminPage: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [adminEmail, setAdminEmail] = useState('');
   const [grantLoading, setGrantLoading] = useState(false);
+  const [revokeLoading, setRevokeLoading] = useState<string | null>(null);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -50,9 +53,23 @@ const AdminPage: React.FC = () => {
         fetchOrders();
       } else if (activeTab === 'team') {
         fetchAdmins();
+      } else if (activeTab === 'users') {
+        fetchUsers();
       }
     }
   }, [isAdmin, activeTab]);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const fetchedUsers = await getAllUsers();
+      setUsers(fetchedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -109,10 +126,34 @@ const AdminPage: React.FC = () => {
   };
 
   const removeAdmin = async (email: string) => {
+    if (email === 'genzin.official@gmail.com') {
+      alert("Access for genzin.official@gmail.com cannot be revoked.");
+      return;
+    }
     if (!window.confirm(`Revoke admin access for ${email}?`)) return;
     const newAdmins = admins.filter(a => a.email !== email);
     setAdmins(newAdmins);
     localStorage.setItem('genzin_admins', JSON.stringify(newAdmins));
+  };
+
+  const handleRevokeAccess = async (userId: string, email: string, currentRevoked: boolean) => {
+    if (email === 'genzin.official@gmail.com') {
+      alert("Access for genzin.official@gmail.com cannot be revoked.");
+      return;
+    }
+    
+    const action = currentRevoked ? 'Restore' : 'Revoke';
+    if (!window.confirm(`${action} access for ${email}?`)) return;
+    
+    setRevokeLoading(userId);
+    try {
+      await setUserAccess(userId, !currentRevoked);
+      fetchUsers();
+    } catch (error) {
+      console.error(`Error ${action.toLowerCase()}ing access:`, error);
+    } finally {
+      setRevokeLoading(null);
+    }
   };
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
@@ -249,6 +290,12 @@ const AdminPage: React.FC = () => {
               className={`text-[10px] font-bold tracking-[0.3em] uppercase pb-2 transition-all ${activeTab === 'team' ? 'text-accent border-b border-accent' : 'text-gray-400 hover:text-ink'}`}
             >
               Team Access
+            </button>
+            <button 
+              onClick={() => setActiveTab('users')}
+              className={`text-[10px] font-bold tracking-[0.3em] uppercase pb-2 transition-all ${activeTab === 'users' ? 'text-accent border-b border-accent' : 'text-gray-400 hover:text-ink'}`}
+            >
+              User Base
             </button>
           </div>
         </div>
@@ -412,6 +459,74 @@ const AdminPage: React.FC = () => {
                   <td colSpan={6} className="px-8 py-32 text-center">
                     <ShoppingBag size={48} className="mx-auto text-gray-100 mb-6" />
                     <p className="text-[10px] font-bold tracking-[0.3em] text-gray-300 uppercase">No orders found in the system</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : activeTab === 'users' ? (
+        <div className="bg-white rounded-[40px] border border-gray-100 overflow-hidden overflow-x-auto premium-shadow">
+          <table className="w-full text-left border-collapse min-w-[1000px]">
+            <thead>
+              <tr className="bg-stone/50 border-b border-gray-100">
+                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">User Profile</th>
+                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Email</th>
+                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Joined On</th>
+                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Access Status</th>
+                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.userId} className="border-b border-gray-50 hover:bg-stone/30 transition-colors">
+                  <td className="px-8 py-8">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-stone">
+                        <img src={user.photoURL} alt={user.displayName} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-ink uppercase tracking-tight">{user.displayName}</span>
+                        <span className="text-[9px] font-mono text-gray-400">ID: {user.userId.slice(0, 8)}...</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-8 py-8">
+                    <span className="text-[10px] font-bold text-ink uppercase">{user.email}</span>
+                  </td>
+                  <td className="px-8 py-8">
+                    <span className="text-[10px] font-bold text-gray-400">{formatDate(user.createdAt)}</span>
+                  </td>
+                  <td className="px-8 py-8">
+                    <span className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase ${user.accessRevoked ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                      {user.accessRevoked ? 'REVOKED' : 'ACTIVE'}
+                    </span>
+                  </td>
+                  <td className="px-8 py-8">
+                    {user.email === 'genzin.official@gmail.com' ? (
+                      <span className="text-[10px] font-bold text-gray-300 italic uppercase">Protected</span>
+                    ) : (
+                      <button 
+                        onClick={() => handleRevokeAccess(user.userId, user.email, !!user.accessRevoked)}
+                        disabled={revokeLoading === user.userId}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
+                          user.accessRevoked 
+                            ? 'bg-ink text-white hover:bg-accent' 
+                            : 'bg-stone text-red-500 border border-red-50 hover:bg-red-500 hover:text-white'
+                        }`}
+                      >
+                        {user.accessRevoked ? <UserCheck size={14} /> : <UserMinus size={14} />}
+                        {revokeLoading === user.userId ? 'PROCESSING...' : user.accessRevoked ? 'RESTORE ACCESS' : 'REVOKE ACCESS'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {users.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-8 py-32 text-center">
+                    <Users size={48} className="mx-auto text-gray-100 mb-6" />
+                    <p className="text-[10px] font-bold tracking-[0.3em] text-gray-300 uppercase">No users found in the directory</p>
                   </td>
                 </tr>
               )}

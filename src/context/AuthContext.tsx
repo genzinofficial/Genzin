@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(authUser);
         setIsAdmin(firebaseUser.email === 'genzin.official@gmail.com');
 
-        // Sync to Firestore
+        // Sync to Firestore and check access
         try {
           const userRef = doc(db, 'users', firebaseUser.uid);
           const userDoc = await getDoc(userRef);
@@ -60,8 +60,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               email: firebaseUser.email,
               displayName: firebaseUser.displayName || 'Genzin Member',
               photoURL: firebaseUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${firebaseUser.uid}`,
-              createdAt: serverTimestamp()
+              createdAt: serverTimestamp(),
+              accessRevoked: false
             });
+          } else {
+            const userData = userDoc.data();
+            if (userData.accessRevoked) {
+              console.warn("Access revoked for user:", firebaseUser.email);
+              setAuthError("Your access to Genzin has been revoked. Please contact support.");
+              await signOut(auth);
+              setUser(null);
+              setIsAdmin(false);
+              setLoading(false);
+              return;
+            }
           }
         } catch (error) {
           console.error("Error syncing user profile:", error);

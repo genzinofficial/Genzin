@@ -1,4 +1,4 @@
-import { Product, Order, UserAddress } from '../types';
+import { Product, Order, UserAddress, User } from '../types';
 import { PRODUCTS } from '../constants';
 import { db } from './firebase';
 import { 
@@ -12,7 +12,8 @@ import {
   query, 
   where, 
   serverTimestamp,
-  orderBy
+  orderBy,
+  limit
 } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from './firestoreUtils';
 
@@ -164,6 +165,34 @@ export const deleteUserAddress = async (userId: string, addressId: string): Prom
     await deleteDoc(addrDoc);
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
+    throw error;
+  }
+};
+
+// User Profile Services
+export const getAllUsers = async (): Promise<User[]> => {
+  const path = 'users';
+  try {
+    const usersCol = collection(db, path);
+    const q = query(usersCol, orderBy('createdAt', 'desc'), limit(100));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      ...doc.data(),
+      userId: doc.id
+    })) as User[];
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
+  }
+};
+
+export const setUserAccess = async (userId: string, accessRevoked: boolean): Promise<void> => {
+  const path = `users/${userId}`;
+  try {
+    const userDoc = doc(db, 'users', userId);
+    await updateDoc(userDoc, { accessRevoked });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
     throw error;
   }
 };

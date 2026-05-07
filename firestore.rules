@@ -8,33 +8,35 @@ service cloud.firestore {
 
     // Phase 3: Primitive Definition
     function isSignedIn() { return request.auth != null; }
-    function isEmailVerified() { return request.auth.token.email_verified == true; }
+    function isEmailVerified() { return request.auth.token.get('email_verified', false) == true; }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isAdmin() { 
-      return isSignedIn() && isEmailVerified() && 
-      request.auth.token.email == 'genzin.official@gmail.com'; 
+      return isSignedIn() && 
+             request.auth.token.get('email', '') == 'genzin.official@gmail.com'; 
     }
 
     // 1. Users Collection
     match /users/{userId} {
       function isValidUser(data) {
         return data.userId == userId &&
-               data.email is string && data.email.size() <= 200 &&
-               data.displayName is string && data.displayName.size() <= 100 &&
-               data.createdAt == request.time &&
-               data.keys().hasAll(['userId', 'email', 'displayName', 'photoURL', 'createdAt']) &&
-               data.keys().size() == 5;
+               data.get('email', '') is string &&
+               data.get('displayName', '') is string &&
+               data.get('accessRevoked', false) == false;
       }
 
+      allow list: if isAdmin();
       allow get: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && isEmailVerified() && isValidUser(incoming());
-      allow update: if isOwner(userId) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL']) &&
-        incoming().displayName is string && incoming().displayName.size() <= 100
-      );
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if (isOwner(userId) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL'])
+      )) || (isAdmin() && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['accessRevoked', 'email', 'userId', 'displayName', 'photoURL', 'createdAt']) &&
+        incoming().diff(existing()).affectedKeys().hasAny(['accessRevoked']) &&
+        (existing().get('email', '') != 'genzin.official@gmail.com' || incoming().get('accessRevoked', false) == false)
+      ));
 
       // User Addresses Subcollection
       match /addresses/{addressId} {

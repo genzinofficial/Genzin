@@ -48,6 +48,15 @@ export interface UserAddress {
   updatedAt?: any;
 }
 
+export interface User {
+  userId: string;
+  email: string;
+  displayName: string;
+  photoURL: string;
+  accessRevoked?: boolean;
+  createdAt: any;
+}
+
 export interface Order {
   id: string;
   userId: string;

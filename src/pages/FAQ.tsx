@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Minus, Search, HelpCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const FAQS = [
   {
@@ -174,12 +175,12 @@ const FAQ: React.FC = () => {
           <div className="relative z-10">
             <h3 className="text-3xl font-display italic mb-4">Still have questions?</h3>
             <p className="text-gray-400 text-sm max-w-md mx-auto mb-8 font-medium">Our concierge team is available 24/7 to assist with your inquiries and collection management.</p>
-            <a 
-              href="/contact"
+            <Link 
+              to="/contact"
               className="inline-block px-10 py-5 bg-white text-ink rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-accent hover:text-white transition-all"
             >
               Contact Concierge
-            </a>
+            </Link>
           </div>
           <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[100px] -mr-32 -mt-32"></div>
         </motion.div>
