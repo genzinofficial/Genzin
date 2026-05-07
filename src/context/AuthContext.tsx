@@ -20,6 +20,7 @@ interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null;
   isAdmin: boolean;
+  isCreator: boolean;
   loading: boolean;
   login: (provider?: 'google' | 'facebook' | 'apple') => Promise<void>;
   logout: () => Promise<void>;
@@ -32,6 +33,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isCreator, setIsCreator] = useState(false);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -47,7 +49,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           emailVerified: firebaseUser.emailVerified
         };
         setUser(authUser);
-        setIsAdmin(firebaseUser.email === 'genzin.official@gmail.com');
+        
+        const creatorEmail = 'genzin.official@gmail.com';
+        const adminEmail = 'geesinjosephhh@gmail.com';
+        
+        setIsCreator(firebaseUser.email === creatorEmail);
+        setIsAdmin(firebaseUser.email === creatorEmail || firebaseUser.email === adminEmail);
 
         // Sync to Firestore and check access
         try {
@@ -71,6 +78,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               await signOut(auth);
               setUser(null);
               setIsAdmin(false);
+              setIsCreator(false);
               setLoading(false);
               return;
             }
@@ -81,6 +89,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } else {
         setUser(null);
         setIsAdmin(false);
+        setIsCreator(false);
       }
       setLoading(false);
     });
@@ -154,6 +163,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     <AuthContext.Provider value={{ 
       user, 
       isAdmin, 
+      isCreator,
       loading, 
       login, 
       logout, 

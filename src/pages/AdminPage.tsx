@@ -18,7 +18,7 @@ const formatDate = (date: any) => {
 };
 
 const AdminPage: React.FC = () => {
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { isAdmin, isCreator, loading: authLoading } = useAuth();
   const { formatPrice } = useCurrency();
   const [activeTab, setActiveTab] = useState<AdminTab>('products');
   const [products, setProducts] = useState<Product[]>([]);
@@ -127,7 +127,11 @@ const AdminPage: React.FC = () => {
 
   const removeAdmin = async (email: string) => {
     if (email === 'genzin.official@gmail.com') {
-      alert("Access for genzin.official@gmail.com cannot be revoked.");
+      alert("System Creator access cannot be revoked.");
+      return;
+    }
+    if (email === 'geesinjosephhh@gmail.com' && !isCreator) {
+      alert("Only the System Creator can revoke Administrator access.");
       return;
     }
     if (!window.confirm(`Revoke admin access for ${email}?`)) return;
@@ -138,7 +142,12 @@ const AdminPage: React.FC = () => {
 
   const handleRevokeAccess = async (userId: string, email: string, currentRevoked: boolean) => {
     if (email === 'genzin.official@gmail.com') {
-      alert("Access for genzin.official@gmail.com cannot be revoked.");
+      alert("System Creator access cannot be revoked.");
+      return;
+    }
+    
+    if (email === 'geesinjosephhh@gmail.com' && !isCreator) {
+      alert("Only the System Creator can modify Administrator status.");
       return;
     }
     
@@ -504,7 +513,9 @@ const AdminPage: React.FC = () => {
                   </td>
                   <td className="px-8 py-8">
                     {user.email === 'genzin.official@gmail.com' ? (
-                      <span className="text-[10px] font-bold text-gray-300 italic uppercase">Protected</span>
+                      <span className="text-[10px] font-bold text-gray-300 italic uppercase">System Creator</span>
+                    ) : (user.email === 'geesinjosephhh@gmail.com' && !isCreator) ? (
+                      <span className="text-[10px] font-bold text-gray-300 italic uppercase">Protected Admin</span>
                     ) : (
                       <button 
                         onClick={() => handleRevokeAccess(user.userId, user.email, !!user.accessRevoked)}
@@ -595,11 +606,11 @@ const AdminPage: React.FC = () => {
                     <Shield size={20} className="text-accent" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-ink">geesinjosephhh@gmail.com</p>
+                    <p className="text-xs font-bold text-ink">genzin.official@gmail.com</p>
                     <p className="text-[9px] font-bold text-accent uppercase tracking-widest">System Creator</p>
                   </div>
                 </div>
-                <div className="px-3 py-1 bg-white rounded-full text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Immutable</div>
+                <div className="px-3 py-1 bg-white rounded-full text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Root</div>
               </div>
               
               <div className="bg-stone p-6 rounded-3xl border border-gray-100 flex items-center justify-between">
@@ -608,7 +619,7 @@ const AdminPage: React.FC = () => {
                     <Shield size={20} className="text-accent" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-ink">genzin.official@gmail.com</p>
+                    <p className="text-xs font-bold text-ink">geesinjosephhh@gmail.com</p>
                     <p className="text-[9px] font-bold text-accent uppercase tracking-widest">Administrator</p>
                   </div>
                 </div>

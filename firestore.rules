@@ -15,7 +15,8 @@ service cloud.firestore {
     function existing() { return resource.data; }
     function isAdmin() { 
       return isSignedIn() && 
-             request.auth.token.get('email', '') == 'genzin.official@gmail.com'; 
+             (request.auth.token.get('email', '') == 'genzin.official@gmail.com' ||
+              request.auth.token.get('email', '') == 'geesinjosephhh@gmail.com'); 
     }
 
     // 1. Users Collection
