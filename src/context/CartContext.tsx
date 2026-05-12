@@ -3,9 +3,9 @@ import { Product, CartItem } from '../types';
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addToCart: (product: Product, options?: { color?: string; size?: string }) => void;
+  removeFromCart: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -16,29 +16,50 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  const addToCart = (product: Product) => {
+  const getCompositeKey = (item: any) => `${item.id}-${item.selectedColor || ''}-${item.selectedSize || ''}`;
+
+  const addToCart = (product: Product, options?: { color?: string; size?: string }) => {
     setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
+      const existingIdx = prev.findIndex((item) => 
+        item.id === product.id && 
+        item.selectedColor === options?.color && 
+        item.selectedSize === options?.size
+      );
+
+      if (existingIdx > -1) {
+        const newCart = [...prev];
+        newCart[existingIdx] = { 
+          ...newCart[existingIdx], 
+          quantity: newCart[existingIdx].quantity + 1 
+        };
+        return newCart;
       }
-      return [...prev, { ...product, quantity: 1 }];
+
+      // Determine images for this specific variant
+      const variant = product.variants?.find(v => v.color === options?.color);
+      const itemImages = variant && variant.images.length > 0 ? variant.images : product.images;
+
+      return [...prev, { 
+        ...product, 
+        images: itemImages,
+        quantity: 1, 
+        selectedColor: options?.color, 
+        selectedSize: options?.size
+      }];
     });
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== productId));
+  const removeFromCart = (cartItemId: string) => {
+    setCart((prev) => prev.filter((item) => getCompositeKey(item) !== cartItemId));
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (cartItemId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(cartItemId);
       return;
     }
     setCart((prev) =>
-      prev.map((item) => (item.id === productId ? { ...item, quantity } : item))
+      prev.map((item) => (getCompositeKey(item) === cartItemId ? { ...item, quantity } : item))
     );
   };
 

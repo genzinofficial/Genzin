@@ -53,7 +53,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       <div className="relative overflow-hidden bg-stone aspect-[3/4] group/image premium-shadow border border-gray-100 transition-all duration-300 group-hover:-translate-y-1">
         <Link to={`/product/${product.id}`} className="block h-full">
           <img 
-            src={product.image} 
+            src={product.images?.[0]} 
             alt={product.name}
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover transition-transform duration-700 group-hover/image:scale-105"
@@ -95,6 +95,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <span className="text-[8px] sm:text-[10px] font-black tracking-widest text-gray-400 uppercase italic">
             {product.category}
           </span>
+          {product.colors && product.colors.length > 0 && (
+            <>
+              <span className="w-1 h-1 rounded-full bg-gray-200"></span>
+              <div className="flex items-center gap-1.5">
+                {product.colors.slice(0, 3).map((color, i) => (
+                  <div 
+                    key={i} 
+                    className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full border border-gray-100 shadow-sm" 
+                    style={{ backgroundColor: color.toLowerCase() }}
+                    title={color}
+                  />
+                ))}
+                {product.colors.length > 3 && (
+                  <span className="text-[8px] font-bold text-gray-400 tracking-tighter">+{product.colors.length - 3}</span>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </motion.div>

@@ -6,10 +6,11 @@ import {
   getProducts, getOrders, addProduct, updateProduct, deleteProduct, updateOrderStatus,
   getAllUsers, setUserAccess
 } from '../lib/dataService';
-import { Plus, Trash2, Edit2, X, Check, Package, Image as ImageIcon, Layout, ShoppingBag, Mail, Calendar, CreditCard, ChevronDown, UserPlus, Shield, Info, Download, ClipboardList, UserMinus, UserCheck, Users } from 'lucide-react';
+import Cropper from 'react-easy-crop';
+import { Plus, Trash2, Edit2, X, Check, Package, Image as ImageIcon, Layout, ShoppingBag, Mail, Calendar, CreditCard, ChevronDown, UserPlus, Shield, Info, Download, ClipboardList, UserMinus, UserCheck, Users, ExternalLink, TrendingUp, HelpCircle, Scissors, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-type AdminTab = 'products' | 'orders' | 'team' | 'users';
+type AdminTab = 'products' | 'orders' | 'team' | 'users' | 'reselling';
 
 const formatDate = (date: any) => {
   if (!date) return 'N/A';
@@ -31,19 +32,75 @@ const AdminPage: React.FC = () => {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [grantLoading, setGrantLoading] = useState(false);
   const [revokeLoading, setRevokeLoading] = useState<string | null>(null);
+
+  // Cropper State
+  const [croppingImageIdx, setCroppingImageIdx] = useState<number | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+  const onCropComplete = (_croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const generateCroppedImage = async () => {
+    if (croppingImageIdx === null || !croppedAreaPixels) return;
+
+    try {
+      const image = new Image();
+      image.src = formData.images[croppingImageIdx];
+      await new Promise((resolve) => (image.onload = resolve));
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) return;
+
+      canvas.width = croppedAreaPixels.width;
+      canvas.height = croppedAreaPixels.height;
+
+      ctx.drawImage(
+        image,
+        croppedAreaPixels.x,
+        croppedAreaPixels.y,
+        croppedAreaPixels.width,
+        croppedAreaPixels.height,
+        0,
+        0,
+        croppedAreaPixels.width,
+        croppedAreaPixels.height
+      );
+
+      const base64Image = canvas.toDataURL('image/jpeg');
+      const newImages = [...formData.images];
+      newImages[croppingImageIdx] = base64Image;
+      setFormData({ ...formData, images: newImages });
+      setCroppingImageIdx(null);
+    } catch (e) {
+      console.error(e);
+    }
+  };
   
   // Form State
   const [formData, setFormData] = useState({
     name: '',
     price: '',
     category: 'FASHION',
-    image: '',
+    groupId: '',
+    images: [] as string[],
     description: '',
-    isNew: false
+    isNew: false,
+    supplierUrl: '',
+    originalPrice: '',
+    variants: [] as { color: string; images: string[] }[]
   });
+
+  const [newVariantColor, setNewVariantColor] = useState('');
+  const [activeVariantIdx, setActiveVariantIdx] = useState<number | null>(null);
 
   useEffect(() => {
     if (isAdmin) {
@@ -181,11 +238,15 @@ const AdminPage: React.FC = () => {
         name: formData.name,
         price: parseFloat(formData.price),
         category: formData.category as any,
-        image: formData.image,
+        images: formData.images,
         description: formData.description,
         isNew: formData.isNew,
+        groupId: formData.groupId,
+        supplierUrl: formData.supplierUrl,
+        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
         sizes: ['S', 'M', 'L', 'XL'],
-        colors: ['Black', 'White']
+        colors: formData.variants.length > 0 ? formData.variants.map(v => v.color) : ['Black', 'White'],
+        variants: formData.variants
       };
 
       if (editingProduct) {
@@ -196,7 +257,18 @@ const AdminPage: React.FC = () => {
       
       setIsModalOpen(false);
       setEditingProduct(null);
-      setFormData({ name: '', price: '', category: 'FASHION', image: '', description: '', isNew: false });
+      setFormData({ 
+        name: '', 
+        price: '', 
+        category: 'FASHION', 
+        groupId: '',
+        images: [], 
+        description: '', 
+        isNew: false, 
+        supplierUrl: '', 
+        originalPrice: '',
+        variants: []
+      });
       fetchProducts();
     } catch (error) {
       console.error("Error saving product:", error);
@@ -251,9 +323,13 @@ const AdminPage: React.FC = () => {
       name: product.name,
       price: product.price.toString(),
       category: product.category,
-      image: product.image,
+      groupId: product.groupId || '',
+      images: product.images || [],
       description: product.description,
-      isNew: product.isNew || false
+      isNew: product.isNew || false,
+      supplierUrl: product.supplierUrl || '',
+      originalPrice: product.originalPrice?.toString() || '',
+      variants: product.variants || []
     });
     setIsModalOpen(true);
   };
@@ -306,6 +382,12 @@ const AdminPage: React.FC = () => {
             >
               User Base
             </button>
+            <button 
+              onClick={() => setActiveTab('reselling')}
+              className={`text-[10px] font-bold tracking-[0.3em] uppercase pb-2 transition-all ${activeTab === 'reselling' ? 'text-accent border-b border-accent' : 'text-gray-400 hover:text-ink'}`}
+            >
+              Meesho Guide
+            </button>
           </div>
         </div>
         
@@ -313,7 +395,18 @@ const AdminPage: React.FC = () => {
           <button 
             onClick={() => {
               setEditingProduct(null);
-              setFormData({ name: '', price: '', category: 'FASHION', image: '', description: '', isNew: false });
+              setFormData({ 
+                name: '', 
+                price: '', 
+                category: 'FASHION', 
+                groupId: '',
+                images: [], 
+                description: '', 
+                isNew: false,
+                supplierUrl: '',
+                originalPrice: '',
+                variants: []
+              });
               setIsModalOpen(true);
             }}
             className="flex items-center gap-3 bg-ink text-white px-8 py-4 rounded-full font-bold text-xs tracking-widest hover:shadow-xl transition-all"
@@ -332,12 +425,40 @@ const AdminPage: React.FC = () => {
         ) : null}
       </div>
 
+      {activeTab === 'products' && (
+        <div className="mb-8 flex items-center gap-4 bg-white p-4 rounded-3xl border border-gray-100 premium-shadow max-w-xl">
+          <div className="bg-stone p-2 rounded-xl">
+            <ShoppingBag size={18} className="text-accent" />
+          </div>
+          <input 
+            type="text" 
+            placeholder="SEARCH INVENTORY..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 bg-transparent border-none text-[10px] font-bold tracking-[0.2em] outline-none placeholder:text-gray-300"
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="p-1 hover:bg-stone rounded-full transition-colors"
+            >
+              <X size={14} className="text-gray-400" />
+            </button>
+          )}
+        </div>
+      )}
+
       {activeTab === 'products' ? (
         <div className="grid grid-cols-1 gap-4">
-          {products.map(product => (
+          {products
+            .filter(p => 
+              p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+              p.category.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .map(product => (
             <div key={product.id} className="bg-white p-6 rounded-3xl border border-gray-100 flex items-center gap-6 hover:shadow-md transition-all group">
               <div className="w-20 h-24 bg-stone rounded-xl overflow-hidden flex-shrink-0">
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                <img src={product.images?.[0]} alt={product.name} className="w-full h-full object-cover" />
               </div>
               <div className="flex-grow">
                 <div className="flex items-center gap-2 mb-1">
@@ -345,7 +466,19 @@ const AdminPage: React.FC = () => {
                   {product.isNew && <span className="text-[9px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">NEW</span>}
                 </div>
                 <h3 className="font-bold text-ink uppercase text-sm mb-1">{product.name}</h3>
-                <p className="text-xs font-bold text-gray-400">{formatPrice(product.price)}</p>
+                <div className="flex items-center gap-3">
+                  <p className="text-xs font-bold text-gray-400">{formatPrice(product.price)}</p>
+                  {product.supplierUrl && (
+                    <a 
+                      href={product.supplierUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-bold text-blue-500 hover:underline flex items-center gap-1"
+                    >
+                      <ExternalLink size={10} /> MEESHO LINK
+                    </a>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
@@ -403,12 +536,20 @@ const AdminPage: React.FC = () => {
                   <td className="px-8 py-8">
                     <div className="flex flex-col gap-2">
                       {order.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded bg-stone overflow-hidden">
-                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        <div key={idx} className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded bg-stone overflow-hidden">
+                              <img src={item.images?.[0]} alt={item.name} className="w-full h-full object-cover" />
+                            </div>
+                            <span className="text-[10px] font-bold text-ink uppercase truncate max-w-[120px]">{item.name}</span>
+                            <span className="text-[9px] font-mono text-gray-400">x{item.quantity}</span>
                           </div>
-                          <span className="text-[10px] font-bold text-ink uppercase truncate max-w-[120px]">{item.name}</span>
-                          <span className="text-[9px] font-mono text-gray-400">x{item.quantity}</span>
+                          {(item.selectedColor || item.selectedSize) && (
+                            <div className="flex gap-2 ml-8 mt-1">
+                              {item.selectedColor && <span className="text-[8px] font-bold text-accent uppercase">Clr: {item.selectedColor}</span>}
+                              {item.selectedSize && <span className="text-[8px] font-bold text-gray-400 uppercase">Sz: {item.selectedSize}</span>}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -544,7 +685,95 @@ const AdminPage: React.FC = () => {
             </tbody>
           </table>
         </div>
-      ) : (
+      ) : activeTab === 'reselling' ? (
+        <div className="max-w-4xl space-y-12">
+          <section className="bg-[#FF007A]/5 rounded-[40px] p-8 sm:p-12 border border-[#FF007A]/10 premium-shadow">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 bg-[#FF007A] rounded-full flex items-center justify-center shadow-lg shadow-[#FF007A]/20">
+                <ShoppingBag size={24} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-display italic text-[#FF007A]">Meesho Reselling Guide</h2>
+                <p className="text-[10px] font-bold tracking-widest text-[#FF007A]/60 uppercase">Monetize your taste with Genzin</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="space-y-4">
+                <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-ink font-display italic text-lg shadow-sm border border-gray-100">1</div>
+                <h3 className="text-xs font-bold text-ink uppercase tracking-wider">Source Products</h3>
+                <p className="text-[10px] font-bold text-gray-400 leading-relaxed uppercase tracking-widest">
+                  Browse Meesho app/site. Find trending items with high ratings and low prices.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-ink font-display italic text-lg shadow-sm border border-gray-100">2</div>
+                <h3 className="text-xs font-bold text-ink uppercase tracking-wider">List on Genzin</h3>
+                <p className="text-[10px] font-bold text-gray-400 leading-relaxed uppercase tracking-widest">
+                  Copy images and description. Set your price with a healthy margin (e.g., +₹200).
+                </p>
+              </div>
+              <div className="space-y-4">
+                <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-ink font-display italic text-lg shadow-sm border border-gray-100">3</div>
+                <h3 className="text-xs font-bold text-ink uppercase tracking-wider">Fulfill Orders</h3>
+                <p className="text-[10px] font-bold text-gray-400 leading-relaxed uppercase tracking-widest">
+                  When a customer orders here, you place the order on Meesho using their address.
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-12 p-6 bg-white rounded-3xl border border-[#FF007A]/10 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <HelpCircle size={20} className="text-[#FF007A]" />
+                <p className="text-[10px] font-bold text-ink uppercase tracking-widest">Need more help with reselling?</p>
+              </div>
+              <a 
+                href="https://meesho.com/reseller" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold bg-ink text-white px-6 py-3 rounded-full hover:bg-[#FF007A] transition-all tracking-widest"
+              >
+                MEESHO SUPPORT
+              </a>
+            </div>
+          </section>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white p-8 rounded-[40px] border border-gray-100 premium-shadow">
+              <div className="flex items-center gap-3 mb-6">
+                <TrendingUp size={20} className="text-green-500" />
+                <h3 className="text-sm font-bold text-ink uppercase tracking-widest">Profit Strategy</h3>
+              </div>
+              <ul className="space-y-4">
+                {[
+                  'Target 20-30% margin after Meesho costs',
+                  'Focus on categories like Watches & Jewelry',
+                  'Always use high-quality original photos if possible',
+                  'Check Meesho seller ratings daily'
+                ].map((tip, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <Check size={12} className="text-green-500" />
+                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{tip}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="bg-ink p-8 rounded-[40px] text-white premium-shadow">
+              <div className="flex items-center gap-3 mb-6 text-accent">
+                <Shield size={20} />
+                <h3 className="text-sm font-bold uppercase tracking-widest">Trust Policy</h3>
+              </div>
+              <p className="text-[10px] font-bold text-gray-400 leading-relaxed uppercase tracking-widest mb-6">
+                Ensure you only list products that have reliable delivery times to maintain your Genzin store reputation.
+              </p>
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+                <p className="text-[9px] font-bold italic text-white/50">"Quality is the best business plan."</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : activeTab === 'team' ? (
         <div className="max-w-4xl">
           <section className="bg-white rounded-[40px] p-8 sm:p-12 border border-blue-50 premium-shadow mb-12">
             <div className="flex items-center gap-4 mb-8">
@@ -649,7 +878,7 @@ const AdminPage: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Edit/Add Modal */}
       <AnimatePresence>
@@ -691,7 +920,7 @@ const AdminPage: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase flex items-center gap-2">
-                      Price (USD - Base)
+                       Price (INR)
                     </label>
                     <input 
                       required
@@ -709,7 +938,7 @@ const AdminPage: React.FC = () => {
                   </label>
                   <select 
                     value={formData.category}
-                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                    onChange={e => setFormData({ ...formData, category: e.target.value as any })}
                     className="w-full bg-stone border-none rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-accent/20"
                   >
                     <option value="FASHION">FASHION</option>
@@ -723,15 +952,236 @@ const AdminPage: React.FC = () => {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase flex items-center gap-2">
-                    <ImageIcon size={10} /> Image URL
+                    <Layers size={10} /> Group ID (Optional)
                   </label>
                   <input 
-                    required
-                    type="url" 
-                    value={formData.image}
-                    onChange={e => setFormData({ ...formData, image: e.target.value })}
+                    type="text" 
+                    placeholder="e.g. iqoo-z10-family"
+                    value={formData.groupId}
+                    onChange={e => setFormData({ ...formData, groupId: e.target.value })}
                     className="w-full bg-stone border-none rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-accent/20"
                   />
+                  <p className="text-[9px] text-gray-400 italic">Products with the same Group ID will be linked together as color/style variants.</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase flex items-center gap-2">
+                       <ImageIcon size={10} /> Base Product Images
+                    </label>
+                    <label className="cursor-pointer bg-accent/10 hover:bg-accent/20 text-accent px-3 py-1.5 rounded-full transition-all flex items-center gap-2 group">
+                      <Plus size={12} className="group-hover:rotate-90 transition-transform" />
+                      <span className="text-[9px] font-bold uppercase tracking-widest">Add Multiple Files</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        multiple
+                        className="hidden" 
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          if (files.length > 0) {
+                            const newImages: string[] = [];
+                            let processed = 0;
+                            files.forEach((file: File) => {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                newImages.push(reader.result as string);
+                                processed++;
+                                if (processed === files.length) {
+                                  setFormData(prev => ({ ...prev, images: [...prev.images, ...newImages] }));
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            });
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                  
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+                    {formData.images.map((img, idx) => (
+                      <div key={idx} className="relative group aspect-square">
+                        <img 
+                          src={img} 
+                          alt={`Preview ${idx + 1}`} 
+                          className="w-full h-full object-cover rounded-xl border border-gray-100 shadow-sm" 
+                        />
+                        <div className="absolute inset-0 bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-xl">
+                          <button 
+                            type="button"
+                            onClick={() => setCroppingImageIdx(idx)}
+                            className="bg-white text-ink p-1.5 rounded-full hover:bg-accent hover:text-white transition-all shadow-lg"
+                            title="Crop / Remove Text"
+                          >
+                            <Scissors size={10} />
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => setFormData(prev => ({ 
+                              ...prev, 
+                              images: prev.images.filter((_, i) => i !== idx) 
+                            }))}
+                            className="bg-white text-red-500 p-1.5 rounded-full hover:bg-red-500 hover:text-white transition-all shadow-lg"
+                          >
+                            <X size={10} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {formData.images.length === 0 && (
+                      <div className="col-span-full py-8 border-2 border-dashed border-stone rounded-2xl flex flex-col items-center justify-center text-gray-300">
+                        <ImageIcon size={24} className="mb-2" />
+                        <p className="text-[9px] font-bold uppercase tracking-widest">No images uploaded</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em]">Add External URL</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="url" 
+                        placeholder="https://images.unsplash.com/..."
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const val = (e.target as HTMLInputElement).value;
+                            if (val) {
+                              setFormData(prev => ({ ...prev, images: [...prev.images, val] }));
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }
+                        }}
+                        className="flex-1 bg-stone border-none rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-accent/20"
+                      />
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          const input = (e.currentTarget.previousSibling as HTMLInputElement);
+                          const val = input.value;
+                          if (val) {
+                            setFormData(prev => ({ ...prev, images: [...prev.images, val] }));
+                            input.value = '';
+                          }
+                        }}
+                        className="bg-stone text-ink px-4 rounded-xl font-bold text-[10px] hover:bg-gray-200 transition-colors uppercase tracking-widest"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6 pt-6 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-[10px] font-bold tracking-widest text-accent uppercase flex items-center gap-2">
+                        <ShoppingBag size={10} /> Color Variants
+                      </label>
+                      <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">Associate specific images with colors</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Color Name (e.g. Ruby Red)" 
+                      value={newVariantColor}
+                      onChange={e => setNewVariantColor(e.target.value)}
+                      className="flex-1 bg-stone border-none rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-accent/20"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        if (!newVariantColor.trim()) return;
+                        setFormData(prev => ({
+                          ...prev,
+                          variants: [...prev.variants, { color: newVariantColor.trim(), images: [] }]
+                        }));
+                        setNewVariantColor('');
+                      }}
+                      className="bg-accent text-white px-6 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:shadow-lg transition-all"
+                    >
+                      Add Variant
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {formData.variants.map((variant, idx) => (
+                      <div key={idx} className="bg-stone/30 rounded-2xl p-4 border border-gray-100">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-[11px] font-black uppercase tracking-widest text-ink">{variant.color}</span>
+                          <div className="flex gap-2">
+                             <label className="cursor-pointer bg-white text-ink p-1.5 rounded-full hover:bg-accent hover:text-white transition-all shadow-sm">
+                               <Plus size={14} />
+                               <input 
+                                 type="file" 
+                                 accept="image/*" 
+                                 multiple
+                                 className="hidden" 
+                                 onChange={(e) => {
+                                   const files = Array.from(e.target.files || []);
+                                   if (files.length > 0) {
+                                     const processedImages: string[] = [];
+                                     let processed = 0;
+                                     files.forEach((file: File) => {
+                                       const reader = new FileReader();
+                                       reader.onloadend = () => {
+                                         processedImages.push(reader.result as string);
+                                         processed++;
+                                         if (processed === files.length) {
+                                           setFormData(prev => {
+                                             const newVariants = [...prev.variants];
+                                             newVariants[idx].images = [...newVariants[idx].images, ...processedImages];
+                                             return { ...prev, variants: newVariants };
+                                           });
+                                         }
+                                       };
+                                       reader.readAsDataURL(file);
+                                     });
+                                   }
+                                 }}
+                               />
+                             </label>
+                             <button 
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  variants: prev.variants.filter((_, i) => i !== idx)
+                                }));
+                              }}
+                              className="bg-white text-red-500 p-1.5 rounded-full hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-5 gap-2">
+                          {variant.images.map((img, imgIdx) => (
+                            <div key={imgIdx} className="relative group aspect-square">
+                              <img src={img} className="w-full h-full object-cover rounded-lg border border-white" />
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  setFormData(prev => {
+                                    const newVariants = [...prev.variants];
+                                    newVariants[idx].images = newVariants[idx].images.filter((_, i) => i !== imgIdx);
+                                    return { ...prev, variants: newVariants };
+                                  });
+                                }}
+                                className="absolute -top-1 -right-1 bg-ink text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                              >
+                                <X size={8} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -758,6 +1208,33 @@ const AdminPage: React.FC = () => {
                   <label htmlFor="isNew" className="text-xs font-bold text-gray-600 uppercase tracking-widest">Mark as New Arrival</label>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-stone/20 p-4 rounded-2xl border border-dashed border-gray-200">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase flex items-center gap-2">
+                      <ExternalLink size={10} /> Supplier URL (Meesho)
+                    </label>
+                    <input 
+                      type="url" 
+                      value={formData.supplierUrl}
+                      onChange={e => setFormData({ ...formData, supplierUrl: e.target.value })}
+                      placeholder="https://meesho.com/..."
+                      className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-accent/20"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold tracking-widest text-gray-400 uppercase flex items-center gap-2">
+                      <TrendingUp size={10} /> Cost Price (Original)
+                    </label>
+                    <input 
+                      type="number" 
+                      value={formData.originalPrice}
+                      onChange={e => setFormData({ ...formData, originalPrice: e.target.value })}
+                      placeholder="For margin calculation"
+                      className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-accent/20"
+                    />
+                  </div>
+                </div>
+
                 <button 
                   type="submit"
                   className="w-full bg-accent text-white py-4 rounded-xl font-bold tracking-widest text-xs hover:shadow-xl transition-all shadow-lg flex items-center justify-center gap-3"
@@ -767,6 +1244,68 @@ const AdminPage: React.FC = () => {
                 </button>
               </form>
             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Crop Modal */}
+      <AnimatePresence>
+        {croppingImageIdx !== null && (
+          <div className="fixed inset-0 z-[120] flex flex-col items-center justify-center bg-ink/90 backdrop-blur-md p-4">
+            <div className="w-full max-w-2xl bg-white rounded-[40px] overflow-hidden flex flex-col h-[80vh]">
+              <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-stone/30">
+                <div>
+                  <h2 className="text-2xl font-display italic">Crop & Clean Image</h2>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Adjust the frame to remove unwanted text or symbols</p>
+                </div>
+                <button onClick={() => setCroppingImageIdx(null)} className="p-2 hover:bg-stone rounded-full transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-grow relative bg-black">
+                <Cropper
+                  image={formData.images[croppingImageIdx]}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={3/4}
+                  onCropChange={setCrop}
+                  onCropComplete={onCropComplete}
+                  onZoomChange={setZoom}
+                />
+              </div>
+
+              <div className="p-8 space-y-6">
+                <div className="flex items-center gap-4">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest shrink-0">Zoom</span>
+                  <input 
+                    type="range" 
+                    min={1} 
+                    max={3} 
+                    step={0.1} 
+                    value={zoom}
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    className="flex-1 accent-accent"
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <button 
+                    onClick={generateCroppedImage}
+                    className="flex-1 bg-accent text-white py-4 rounded-xl font-bold tracking-widest text-xs hover:shadow-xl transition-all shadow-lg flex items-center justify-center gap-3"
+                  >
+                    <Check size={16} />
+                    APPLY CROP & CLEAN
+                  </button>
+                  <button 
+                    onClick={() => setCroppingImageIdx(null)}
+                    className="px-8 bg-stone py-4 rounded-xl font-bold tracking-widest text-xs text-ink hover:bg-gray-200 transition-colors"
+                  >
+                    CANCEL
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </AnimatePresence>

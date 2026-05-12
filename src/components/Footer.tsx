@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Instagram, Twitter, Youtube, ArrowRight } from 'lucide-react';
+import { Instagram, Twitter, Youtube, Facebook, ArrowRight } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
@@ -39,7 +39,8 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-[10px] font-bold tracking-[0.2em] mb-8 uppercase text-gray-400">Join Us</h3>
             <div className="flex space-x-4 mb-8">
-              <a href="#" className="hover:text-accent text-ink transition-colors"><Instagram size={18} /></a>
+              <a href="https://www.instagram.com/genzin.official/" target="_blank" rel="noopener noreferrer" className="hover:text-accent text-ink transition-colors"><Instagram size={18} /></a>
+              <a href="#" className="hover:text-accent text-ink transition-colors"><Facebook size={18} /></a>
               <a href="#" className="hover:text-accent text-ink transition-colors"><Twitter size={18} /></a>
               <a href="#" className="hover:text-accent text-ink transition-colors"><Youtube size={18} /></a>
             </div>

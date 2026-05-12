@@ -125,7 +125,9 @@ const CartPage: React.FC = () => {
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          image: item.image
+          images: item.images,
+          selectedColor: item.selectedColor,
+          selectedSize: item.selectedSize
         })),
         total: totalPrice,
         status: 'pending' as const,
@@ -223,6 +225,8 @@ const CartPage: React.FC = () => {
       </div>
     );
   }
+
+  const getCompositeKey = (item: any) => `${item.id}-${item.selectedColor || ''}-${item.selectedSize || ''}`;
 
   return (
     <div className="pt-32 sm:pt-48 px-6 max-w-7xl mx-auto min-h-screen pb-20">
@@ -394,11 +398,11 @@ const CartPage: React.FC = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
-                    key={item.id} 
+                    key={getCompositeKey(item)} 
                     className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-8 border-b border-gray-100 pb-10 group"
                   >
                     <div className="w-full sm:w-32 aspect-[3/4] bg-stone overflow-hidden rounded-xl border border-gray-50">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                      <img src={item.images?.[0]} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                     </div>
                     <div className="flex-grow flex flex-col justify-between py-1">
                       <div>
@@ -409,16 +413,29 @@ const CartPage: React.FC = () => {
                             <div className="w-4 h-[1px] bg-accent/20 mt-1"></div>
                           </div>
                         </div>
-                        <p className="text-[10px] text-gray-400 tracking-widest uppercase mb-6 font-bold">{item.category}</p>
+                        <div className="flex flex-wrap items-center gap-3 mb-6">
+                          <p className="text-[10px] text-accent tracking-widest uppercase font-bold">{item.category}</p>
+                          {(item.selectedColor || item.selectedSize) && <span className="w-1 h-1 rounded-full bg-gray-200"></span>}
+                          {item.selectedColor && (
+                            <span className="text-[9px] font-black tracking-widest text-ink uppercase bg-stone px-2 py-1 rounded">
+                              Color: {item.selectedColor}
+                            </span>
+                          )}
+                          {item.selectedSize && (
+                            <span className="text-[9px] font-black tracking-widest text-ink uppercase bg-stone px-2 py-1 rounded">
+                              Size: {item.selectedSize}
+                            </span>
+                          )}
+                        </div>
                         
                         <div className="flex items-center space-x-8">
                           <div className="flex items-center space-x-6 bg-stone p-1 rounded-full px-4">
-                            <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="text-sm font-bold text-gray-400 hover:text-accent transition-colors">-</button>
+                            <button onClick={() => updateQuantity(getCompositeKey(item), item.quantity - 1)} className="text-sm font-bold text-gray-400 hover:text-accent transition-colors">-</button>
                             <span className="text-xs font-bold w-4 text-center">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="text-sm font-bold text-gray-400 hover:text-accent transition-colors">+</button>
+                            <button onClick={() => updateQuantity(getCompositeKey(item), item.quantity + 1)} className="text-sm font-bold text-gray-400 hover:text-accent transition-colors">+</button>
                           </div>
                           <button 
-                            onClick={() => removeFromCart(item.id)}
+                            onClick={() => removeFromCart(getCompositeKey(item))}
                             className="text-gray-300 hover:text-red-500 transition-colors"
                           >
                             <Trash2 size={18} />
@@ -451,11 +468,6 @@ const CartPage: React.FC = () => {
                 <span className="text-sm">Total Valuation</span>
                 <span className="text-2xl font-display italic tracking-tight">{formatPrice(totalPrice)}</span>
               </div>
-              {currency !== 'USD' && (
-                <div className="text-[9px] text-gray-400 text-right font-medium italic mt-4 lowercase tracking-tight">
-                  approximate value {totalPrice.toFixed(2)} usd
-                </div>
-              )}
             </div>
 
             <button 

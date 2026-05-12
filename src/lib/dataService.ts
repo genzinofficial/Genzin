@@ -31,22 +31,39 @@ const initializeProducts = () => {
   return JSON.parse(saved);
 };
 
+const normalizeProduct = (p: any): Product => {
+  if (p.images && Array.isArray(p.images)) return p as Product;
+  return {
+    ...p,
+    images: p.image? [p.image] : []
+  } as Product;
+};
+
 export const getProducts = async (): Promise<Product[]> => {
   await delay(300);
-  return initializeProducts();
+  const products = initializeProducts();
+  return products.map(normalizeProduct);
 };
 
 export const getProductById = async (id: string): Promise<Product | null> => {
   await delay(200);
   const products = initializeProducts();
-  const product = products.find((p: Product) => p.id === id);
-  return product || null;
+  const product = products.find((p: any) => p.id === id);
+  return product ? normalizeProduct(product) : null;
+};
+
+export const getProductsByGroupId = async (groupId: string): Promise<Product[]> => {
+  await delay(200);
+  const products = initializeProducts();
+  return products
+    .filter((p: Product) => p.groupId === groupId)
+    .map(normalizeProduct);
 };
 
 export const getFeaturedProducts = async (count: number): Promise<Product[]> => {
   await delay(300);
   const products = initializeProducts();
-  return products.slice(0, count);
+  return products.slice(0, count).map(normalizeProduct);
 };
 
 export const addProduct = async (productData: Omit<Product, 'id'>): Promise<Product> => {
@@ -86,10 +103,17 @@ export const getOrders = async (userId?: string): Promise<Order[]> => {
       : query(ordersCol, orderBy('createdAt', 'desc'));
     
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      ...doc.data(),
-      id: doc.id
-    })) as Order[];
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        items: (data.items || []).map((item: any) => ({
+          ...item,
+          images: item.images || (item.image ? [item.image] : [])
+        }))
+      };
+    }) as Order[];
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, path);
     return [];

@@ -1,17 +1,28 @@
+export interface ProductVariant {
+  color: string;
+  images: string[];
+}
+
 export interface Product {
   id: string;
   name: string;
   price: number;
   category: 'ELECTRONICS' | 'FASHION' | 'WATCHES' | 'JEWELRY' | 'ACCESSORIES' | 'HOME';
-  image: string;
+  images: string[];
   description: string;
   isNew?: boolean;
   sizes: string[];
   colors: string[];
+  variants?: ProductVariant[];
+  groupId?: string;
+  supplierUrl?: string;
+  originalPrice?: number;
 }
 
 export interface CartItem extends Product {
   quantity: number;
+  selectedColor?: string;
+  selectedSize?: string;
 }
 
 export interface OrderItem {
@@ -19,7 +30,9 @@ export interface OrderItem {
   name: string;
   price: number;
   quantity: number;
-  image: string;
+  images: string[];
+  selectedColor?: string;
+  selectedSize?: string;
 }
 
 export interface BillingInfo {

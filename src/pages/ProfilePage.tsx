@@ -333,7 +333,7 @@ const ProfilePage: React.FC = () => {
                           {order.items.slice(0, 4).map((item, i) => (
                             <div key={i} className="flex items-center gap-3">
                               <div className="w-12 h-12 bg-stone rounded-xl overflow-hidden flex-shrink-0">
-                                <img src={item.image} alt={item.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
+                                <img src={item.images?.[0]} alt={item.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
                               </div>
                               <div className="min-w-0">
                                 <p className="text-[9px] font-black uppercase tracking-widest truncate">{item.name}</p>

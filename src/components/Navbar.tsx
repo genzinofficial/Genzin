@@ -145,7 +145,7 @@ const Navbar: React.FC = () => {
                               className="flex items-center gap-4 px-4 py-3 hover:bg-stone rounded-2xl transition-all group"
                             >
                               <div className="w-14 h-14 bg-stone rounded-xl overflow-hidden border border-gray-100 shrink-0 relative">
-                                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                <img src={product.images?.[0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                 <div className="absolute inset-0 bg-ink/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                               </div>
                               <div className="min-w-0 flex-1">
@@ -307,7 +307,7 @@ const Navbar: React.FC = () => {
                         className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm"
                       >
                         <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-gray-50">
-                          <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                          <img src={product.images?.[0]} alt={product.name} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-[10px] font-bold text-ink truncate uppercase tracking-wider">{product.name}</div>
@@ -344,24 +344,9 @@ const Navbar: React.FC = () => {
                    <span className="text-[10px] font-black tracking-[0.2em] text-gray-400 uppercase italic">Global Settings</span>
                  </div>
                  
-                 <div className="grid grid-cols-5 gap-2">
-                   {['USD', 'INR', 'EUR', 'GBP', 'JPY'].map((curr) => {
-                     const flags: Record<string, string> = { USD: '🇺🇸', INR: '🇮🇳', EUR: '🇪🇺', GBP: '🇬🇧', JPY: '🇯🇵' };
-                     return (
-                       <button
-                         key={curr}
-                         onClick={() => setCurrency(curr)}
-                         className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${
-                           currency === curr 
-                             ? 'bg-ink text-white border-ink shadow-lg shadow-ink/20' 
-                             : 'bg-white border-gray-100 text-gray-400'
-                         }`}
-                       >
-                         <span className="text-lg mb-1">{flags[curr]}</span>
-                         <span className="text-[9px] font-black tracking-widest">{curr}</span>
-                       </button>
-                     );
-                   })}
+                 <div className="flex items-center justify-center p-4 bg-stone rounded-2xl">
+                    <span className="text-lg mr-3">🇮🇳</span>
+                    <span className="text-[10px] font-black tracking-widest uppercase">Locked to INR</span>
                  </div>
               </div>
 

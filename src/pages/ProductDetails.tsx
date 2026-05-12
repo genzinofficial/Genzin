@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProductById } from '../lib/dataService';
+import { getProductById, getProductsByGroupId } from '../lib/dataService';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -18,9 +18,14 @@ const ProductDetails: React.FC = () => {
   const { formatPrice } = useCurrency();
   const [quantity, setQuantity] = useState(1);
   const [product, setProduct] = useState<Product | null>(null);
+  const [siblings, setSiblings] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [isZooming, setIsZooming] = useState(false);
+
+  const [activeImage, setActiveImage] = useState(0);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
@@ -35,6 +40,17 @@ const ProductDetails: React.FC = () => {
       try {
         const fetchedProduct = await getProductById(id);
         setProduct(fetchedProduct);
+        if (fetchedProduct) {
+          setSelectedSize(fetchedProduct.sizes[0]);
+          setSelectedColor(fetchedProduct.colors[0]);
+          
+          if (fetchedProduct.groupId) {
+            const related = await getProductsByGroupId(fetchedProduct.groupId);
+            setSiblings(related.filter(p => p.id !== fetchedProduct.id));
+          } else {
+            setSiblings([]);
+          }
+        }
       } catch (error) {
         console.error("Error fetching product:", error);
       } finally {
@@ -44,6 +60,13 @@ const ProductDetails: React.FC = () => {
 
     fetchProduct();
   }, [id]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const variantImages = product?.variants?.find(v => v.color === selectedColor)?.images || [];
+  const displayImages = variantImages.length > 0 ? variantImages : product?.images || [];
 
   const isWishlisted = product ? isInWishlist(product.id) : false;
 
@@ -66,7 +89,12 @@ const ProductDetails: React.FC = () => {
       navigate('/login');
       return;
     }
-    for(let i=0; i<quantity; i++) addToCart(product);
+    for(let i=0; i<quantity; i++) {
+      addToCart(product, { 
+        color: selectedColor || undefined, 
+        size: selectedSize || undefined 
+      });
+    }
   };
 
   if (loading) {
@@ -108,7 +136,8 @@ const ProductDetails: React.FC = () => {
             onMouseLeave={() => setIsZooming(false)}
           >
             <motion.img 
-              src={product.image} 
+              key={`${selectedColor}-${activeImage}`}
+              src={displayImages[activeImage]} 
               alt={product.name}
               referrerPolicy="no-referrer"
               animate={{ 
@@ -124,14 +153,20 @@ const ProductDetails: React.FC = () => {
             {/* Gloss Overlay */}
             <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/10 to-transparent mix-blend-overlay" />
           </motion.div>
-          <div className="grid grid-cols-2 gap-8">
-             <div className="aspect-[4/5] bg-stone overflow-hidden rounded-2xl border border-gray-50">
-                <img src={`https://picsum.photos/seed/${product.id}1/800/1000`} alt="detail" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" referrerPolicy="no-referrer" />
-             </div>
-             <div className="aspect-[4/5] bg-stone overflow-hidden rounded-2xl border border-gray-50">
-                <img src={`https://picsum.photos/seed/${product.id}2/800/1000`} alt="detail" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" referrerPolicy="no-referrer" />
-             </div>
-          </div>
+          
+          {displayImages.length > 1 && (
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-stone">
+               {displayImages.map((img, idx) => (
+                 <button 
+                  key={idx}
+                  onClick={() => setActiveImage(idx)}
+                  className={`relative w-24 sm:w-32 aspect-[3/4] flex-shrink-0 bg-stone rounded-2xl overflow-hidden border-2 transition-all ${activeImage === idx ? 'border-accent shadow-lg scale-95' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                 >
+                    <img src={img} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                 </button>
+               ))}
+            </div>
+          )}
         </div>
 
         {/* Info */}
@@ -165,7 +200,11 @@ const ProductDetails: React.FC = () => {
               </div>
               <div className="flex flex-wrap gap-2">
                 {product.sizes.map(size => (
-                  <button key={size} className="text-[11px] font-bold px-5 h-12 flex items-center justify-center border rounded-xl hover:border-accent hover:text-accent transition-all">
+                  <button 
+                    key={size} 
+                    onClick={() => setSelectedSize(size)}
+                    className={`text-[11px] font-bold px-5 h-12 flex items-center justify-center border rounded-xl transition-all ${selectedSize === size ? 'bg-ink text-white border-ink shadow-lg' : 'hover:border-accent hover:text-accent border-gray-100'}`}
+                  >
                     {size}
                   </button>
                 ))}
@@ -173,15 +212,62 @@ const ProductDetails: React.FC = () => {
             </div>
 
             <div className="flex flex-col space-y-4">
-              <div className="flex justify-between items-center text-[10px] font-bold tracking-widest text-gray-400 uppercase">
-                <span>Color Way</span>
+              <div className="flex justify-between items-center text-[10px] font-bold tracking-widest text-ink uppercase">
+                <span>Color: <span className="text-accent">{selectedColor}</span></span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {product.colors.map(color => (
-                  <button key={color} className="text-[10px] font-bold tracking-widest px-6 py-3 border rounded-xl hover:border-accent hover:text-accent transition-all uppercase">
-                    {color}
+              <div className="flex flex-wrap gap-4">
+                {/* Linked Grouped Color Variations */}
+                {siblings.map(sibling => (
+                  <button 
+                    key={sibling.id} 
+                    onClick={() => {
+                        navigate(`/product/${sibling.id}`);
+                        window.scrollTo(0, 0);
+                    }}
+                    className="group relative flex flex-col items-center gap-2 p-1 rounded-2xl transition-all hover:bg-stone/30"
+                  >
+                    <div className="w-16 sm:w-20 aspect-[3/4] rounded-xl overflow-hidden bg-stone border border-gray-100 transition-transform group-hover:scale-95 grayscale hover:grayscale-0">
+                      <img 
+                        src={sibling.images[0]} 
+                        alt={sibling.name} 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <span className="text-[9px] font-black uppercase tracking-tighter text-ink opacity-40 group-hover:opacity-100 transition-opacity pb-1 truncate max-w-[80px]">
+                      {sibling.colors?.[0] || 'Alt'}
+                    </span>
                   </button>
                 ))}
+
+                {/* Internal Color Variations (Current Product) */}
+                {product.colors.map(color => {
+                  const variant = product.variants?.find(v => v.color === color);
+                  const thumbnail = variant?.images?.[0] || product.images[0];
+                  
+                  return (
+                    <button 
+                      key={color} 
+                      onClick={() => {
+                        setSelectedColor(color);
+                        setActiveImage(0); // Reset gallery index on color change
+                      }}
+                      className={`group relative flex flex-col items-center gap-2 p-1 rounded-2xl transition-all ${selectedColor === color ? 'bg-stone/50 ring-2 ring-accent shadow-sm' : 'hover:bg-stone/30'}`}
+                    >
+                      <div className="w-16 sm:w-20 aspect-[3/4] rounded-xl overflow-hidden bg-stone border border-gray-100 transition-transform group-hover:scale-95">
+                        <img 
+                          src={thumbnail} 
+                          alt={color} 
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-tighter text-ink opacity-60 group-hover:opacity-100 transition-opacity pb-1">
+                        {color}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

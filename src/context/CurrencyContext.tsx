@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 interface CurrencyContextType {
   currency: string;
@@ -20,61 +20,25 @@ const EXCHANGE_RATES: Record<string, number> = {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currency, setCurrencyState] = useState('USD');
-  const [symbol, setSymbol] = useState('$');
-  const [loading, setLoading] = useState(true);
-
-  const updateSymbol = (curr: string) => {
-    const fmt = new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: curr,
-    });
-    const parts = fmt.formatToParts(0);
-    const symbolPart = parts.find(p => p.type === 'currency');
-    if (symbolPart) setSymbol(symbolPart.value);
-  };
-
-  useEffect(() => {
-    const detectCurrency = async () => {
-      try {
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
-        
-        if (data.currency && EXCHANGE_RATES[data.currency]) {
-          setCurrencyState(data.currency);
-          updateSymbol(data.currency);
-        }
-      } catch (error) {
-        console.error('Failed to detect currency:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    detectCurrency();
-  }, []);
+  const [currency] = useState('INR');
+  const [symbol] = useState('₹');
+  const [loading] = useState(false);
 
   const convertPrice = (amount: number) => {
-    return amount * (EXCHANGE_RATES[currency] || 1);
+    return amount;
   };
 
-  const setCurrency = (newCurrency: string) => {
-    if (EXCHANGE_RATES[newCurrency]) {
-      setCurrencyState(newCurrency);
-      updateSymbol(newCurrency);
-    }
+  const setCurrency = (_newCurrency: string) => {
+    // No-op to lock currency to INR
   };
 
   const formatPrice = (amount: number) => {
-    // Convert from USD (base) to target currency
-    const convertedAmount = convertPrice(amount);
-    
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: currency,
+      currency: 'INR',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(convertedAmount);
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   return (
