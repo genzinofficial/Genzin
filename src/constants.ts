@@ -137,5 +137,38 @@ export const PRODUCTS: Product[] = [
     colors: ['Gold'],
     supplierUrl: 'https://www.meesho.com/traditional-gold-plated-floral-jhumka/p/6xyz9',
     originalPrice: 2.1 // ~200 INR (Profit ~130 INR)
+  },
+  {
+    id: 'g1',
+    name: 'Lumix Pro G1 (Midnight)',
+    price: 899,
+    category: 'ELECTRONICS',
+    images: ['https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=800'],
+    description: 'High-performance computing in a stunning midnight finish.',
+    sizes: ['13"', '15"'],
+    colors: ['Midnight'],
+    groupId: 'lumix-pro-family'
+  },
+  {
+    id: 'g2',
+    name: 'Lumix Pro G1 (Starlight)',
+    price: 899,
+    category: 'ELECTRONICS',
+    images: ['https://images.unsplash.com/photo-1517336714731-489689fd1ca4?auto=format&fit=crop&q=80&w=800'],
+    description: 'High-performance computing in a elegant starlight finish.',
+    sizes: ['13"', '15"'],
+    colors: ['Starlight'],
+    groupId: 'lumix-pro-family'
+  },
+  {
+    id: 'g3',
+    name: 'Lumix Pro G1 (Space Gray)',
+    price: 899,
+    category: 'ELECTRONICS',
+    images: ['https://images.unsplash.com/photo-1517336714731-489689fd1ca2?auto=format&fit=crop&q=80&w=800'],
+    description: 'High-performance computing in a professional space gray finish.',
+    sizes: ['13"', '15"'],
+    colors: ['Space Gray'],
+    groupId: 'lumix-pro-family'
   }
 ];

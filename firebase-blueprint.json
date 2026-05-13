@@ -47,9 +47,34 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "fullName", "street", "city", "country"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Store inventory items",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "images": { "type": "array" },
+        "description": { "type": "string" },
+        "isNew": { "type": "boolean" },
+        "sizes": { "type": "array" },
+        "colors": { "type": "array" },
+        "variants": { "type": "array" },
+        "groupId": { "type": "string" },
+        "supplierUrl": { "type": "string" },
+        "originalPrice": { "type": "number" }
+      },
+      "required": ["name", "price", "category", "images", "description"]
     }
   },
   "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Store products"
+    },
     "/users/{userId}": {
       "schema": "User",
       "description": "Global user profiles"
@@ -61,6 +86,10 @@
     "/users/{userId}/addresses/{addressId}": {
       "schema": "Address",
       "description": "User saved addresses"
+    },
+    "/test/{docId}": {
+      "schema": "object",
+      "description": "Connection test"
     }
   }
 }

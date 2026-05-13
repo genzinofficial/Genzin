@@ -482,6 +482,21 @@ const AdminPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
+                  onClick={() => {
+                    const data = `PRODUCT DETAILS\nName: ${product.name}\nPrice: ${formatPrice(product.price)}\nCategory: ${product.category}\nDescription: ${product.description}\nGroup ID: ${product.groupId || 'None'}`;
+                    const blob = new Blob([data], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `product_${product.name.replace(/\s+/g, '_')}.txt`;
+                    link.click();
+                  }}
+                  className="p-3 hover:bg-stone rounded-full text-gray-400 hover:text-blue-500 transition-colors"
+                  title="Download Product Details"
+                >
+                  <Download size={18} />
+                </button>
+                <button 
                   onClick={() => openEditModal(product)}
                   className="p-3 hover:bg-stone rounded-full text-gray-500 hover:text-ink transition-colors"
                 >
@@ -498,16 +513,16 @@ const AdminPage: React.FC = () => {
           ))}
         </div>
       ) : activeTab === 'orders' ? (
-        <div className="bg-white rounded-[40px] border border-gray-100 overflow-hidden overflow-x-auto premium-shadow">
+        <div className="bg-white rounded-[40px] border border-gray-100 overflow-x-auto premium-shadow min-h-[500px]">
           <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead>
               <tr className="bg-stone/50 border-b border-gray-100">
-                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Order Details</th>
+                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase rounded-tl-[40px]">Order Details</th>
                 <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Customer</th>
                 <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Items</th>
                 <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Total Amount</th>
                 <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Status</th>
-                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Actions</th>
+                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase rounded-tr-[40px]">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -577,7 +592,7 @@ const AdminPage: React.FC = () => {
                         <ChevronDown size={10} />
                       </span>
                       
-                      <div className="absolute top-full left-0 mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 hidden group-hover/status:block z-20 py-2">
+                      <div className="absolute top-full left-0 w-32 bg-white rounded-xl shadow-2xl border border-gray-100 hidden group-hover/status:block z-20 py-2 transition-all before:content-[''] before:absolute before:top-[-20px] before:left-0 before:right-0 before:h-[20px]">
                         {['pending', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => (
                           <button
                             key={status}
@@ -593,13 +608,19 @@ const AdminPage: React.FC = () => {
                   <td className="px-8 py-8">
                     <button 
                       onClick={() => {
-                        if (window.confirm('Archive this order?')) {
-                          console.log('Archiving order:', order.id);
-                        }
+                        const items = order.items.map(item => `${item.name} (${item.selectedSize}/${item.selectedColor}) x${item.quantity}`).join('\n');
+                        const data = `ORDER DETAILS\nID: ${order.id}\nStatus: ${order.status}\nCustomer: ${order.userEmail}\nTotal: ${formatPrice(order.total)}\nDate: ${formatDate(order.createdAt)}\n\nITEMS:\n${items}`;
+                        const blob = new Blob([data], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `order_${order.id.slice(-8)}.txt`;
+                        link.click();
                       }}
-                      className="p-3 hover:bg-stone rounded-full text-gray-400 hover:text-ink transition-colors"
+                      className="p-3 hover:bg-stone rounded-full text-gray-400 hover:text-accent transition-colors"
+                      title="Download Order Details"
                     >
-                      <ClipboardList size={18} />
+                      <Download size={18} />
                     </button>
                   </td>
                 </tr>
@@ -616,15 +637,15 @@ const AdminPage: React.FC = () => {
           </table>
         </div>
       ) : activeTab === 'users' ? (
-        <div className="bg-white rounded-[40px] border border-gray-100 overflow-hidden overflow-x-auto premium-shadow">
+        <div className="bg-white rounded-[40px] border border-gray-100 overflow-x-auto premium-shadow min-h-[500px]">
           <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead>
               <tr className="bg-stone/50 border-b border-gray-100">
-                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">User Profile</th>
+                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase rounded-tl-[40px]">User Profile</th>
                 <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Email</th>
                 <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Joined On</th>
                 <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Access Status</th>
-                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase">Actions</th>
+                <th className="px-8 py-6 text-[10px] font-bold tracking-widest text-gray-400 uppercase rounded-tr-[40px]">Actions</th>
               </tr>
             </thead>
             <tbody>
