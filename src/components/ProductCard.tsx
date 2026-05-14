@@ -6,7 +6,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
-import { Plus, Heart } from 'lucide-react';
+import { Plus, Heart, Loader2 } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -19,28 +19,61 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { user } = useAuth();
   const { formatPrice } = useCurrency();
 
+  const [isAddingToCart, setIsAddingToCart] = React.useState(false);
+  const [isAddingToWishlist, setIsAddingToWishlist] = React.useState(false);
+
   const isWishlisted = isInWishlist(product.id);
 
-  const toggleWishlist = (e: React.MouseEvent) => {
+  const isProductNew = () => {
+    if (!product.createdAt) return product.isNew;
+    
+    try {
+      const createdDate = product.createdAt.toDate 
+        ? product.createdAt.toDate() 
+        : new Date(product.createdAt);
+      
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return diffDays <= 7;
+    } catch (e) {
+      return product.isNew;
+    }
+  };
+
+  const toggleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (!user) {
       navigate('/login');
       return;
     }
+    
+    setIsAddingToWishlist(true);
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
     if (isWishlisted) {
       removeFromWishlist(product.id);
     } else {
       addToWishlist(product);
     }
+    setIsAddingToWishlist(false);
   };
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (!user) {
       navigate('/login');
       return;
     }
+    
+    setIsAddingToCart(true);
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
     addToCart(product);
+    setIsAddingToCart(false);
   };
 
   return (
@@ -60,7 +93,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           />
         </Link>
         
-        {product.isNew && (
+        {isProductNew() && (
           <div className="absolute top-4 left-4 bg-accent text-white text-[10px] font-bold px-3 py-1 uppercase tracking-widest z-10 shadow-lg">
             New
           </div>
@@ -68,16 +101,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
         <button 
           onClick={toggleWishlist}
-          className={`absolute top-4 right-4 p-2 rounded-full shadow-lg z-10 transition-all ${isWishlisted ? 'bg-accent text-white' : 'bg-white/80 text-gray-400 hover:text-accent'}`}
+          disabled={isAddingToWishlist}
+          className={`absolute top-4 right-4 p-2 rounded-full shadow-lg z-10 transition-all ${isWishlisted ? 'bg-accent text-white' : 'bg-white/80 text-gray-400 hover:text-accent'} ${isAddingToWishlist ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
-          <Heart size={16} fill={isWishlisted ? "currentColor" : "none"} />
+          {isAddingToWishlist ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Heart size={16} fill={isWishlisted ? "currentColor" : "none"} />
+          )}
         </button>
 
         <button 
           onClick={handleAddToCart}
-          className="absolute bottom-4 left-4 right-4 bg-white/95 text-ink py-2.5 sm:py-4 text-[9px] sm:text-[10px] font-bold tracking-widest uppercase border border-gray-100 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 translate-y-0 sm:translate-y-2 sm:group-hover:translate-y-0 transition-all duration-300 z-20 hover:bg-accent hover:text-white"
+          disabled={isAddingToCart}
+          className="absolute bottom-4 left-4 right-4 bg-white/95 text-ink py-2.5 sm:py-4 text-[9px] sm:text-[10px] font-bold tracking-widest uppercase border border-gray-100 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 translate-y-0 sm:translate-y-2 sm:group-hover:translate-y-0 transition-all duration-300 z-20 hover:bg-accent hover:text-white flex items-center justify-center gap-2 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
         >
-          Add to Cart
+          {isAddingToCart ? (
+            <>
+              <Loader2 size={12} className="animate-spin" />
+              <span>Processing...</span>
+            </>
+          ) : (
+            'Add to Cart'
+          )}
         </button>
       </div>
       

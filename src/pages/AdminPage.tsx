@@ -334,6 +334,24 @@ const AdminPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const isProductNew = (product: Product) => {
+    if (!product.createdAt) return product.isNew;
+    
+    try {
+      const createdDate = product.createdAt.toDate 
+        ? product.createdAt.toDate() 
+        : new Date(product.createdAt);
+      
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return diffDays <= 7;
+    } catch (e) {
+      return product.isNew;
+    }
+  };
+
   if (authLoading || loading) return (
     <div className="pt-40 flex justify-center items-center min-h-screen">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-accent"></div>
@@ -463,7 +481,7 @@ const AdminPage: React.FC = () => {
               <div className="flex-grow">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[9px] font-bold tracking-widest text-accent uppercase">{product.category}</span>
-                  {product.isNew && <span className="text-[9px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">NEW</span>}
+                  {isProductNew(product) && <span className="text-[9px] font-bold bg-accent/10 text-accent px-2 py-0.5 rounded-full">NEW</span>}
                 </div>
                 <h3 className="font-bold text-ink uppercase text-sm mb-1">{product.name}</h3>
                 <div className="flex items-center gap-3">

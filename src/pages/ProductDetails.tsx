@@ -7,7 +7,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { motion } from 'motion/react';
-import { ArrowLeft, Plus, Minus, Share2, Info, Heart } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Share2, Info, Heart, Loader2 } from 'lucide-react';
 
 const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +26,9 @@ const ProductDetails: React.FC = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
@@ -70,31 +73,41 @@ const ProductDetails: React.FC = () => {
 
   const isWishlisted = product ? isInWishlist(product.id) : false;
 
-  const toggleWishlist = () => {
+  const toggleWishlist = async () => {
     if (!product) return;
     if (!user) {
       navigate('/login');
       return;
     }
+    
+    setIsAddingToWishlist(true);
+    await new Promise(resolve => setTimeout(resolve, 600));
+
     if (isWishlisted) {
       removeFromWishlist(product.id);
     } else {
       addToWishlist(product);
     }
+    setIsAddingToWishlist(false);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) return;
     if (!user) {
       navigate('/login');
       return;
     }
+
+    setIsAddingToCart(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+
     for(let i=0; i<quantity; i++) {
       addToCart(product, { 
         color: selectedColor || undefined, 
         size: selectedSize || undefined 
       });
     }
+    setIsAddingToCart(false);
   };
 
   if (loading) {
@@ -284,17 +297,32 @@ const ProductDetails: React.FC = () => {
           <div className="space-y-4">
             <button 
               onClick={handleAddToCart}
-              className="w-full bg-accent text-white py-6 font-bold tracking-widest text-xs hover:shadow-xl transition-all uppercase rounded-full shadow-lg flex items-center justify-center gap-4"
+              disabled={isAddingToCart}
+              className="w-full bg-accent text-white py-6 font-bold tracking-widest text-xs hover:shadow-xl transition-all uppercase rounded-full shadow-lg flex items-center justify-center gap-4 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
             >
-              Add to Cart
-              <Plus size={16} />
+              {isAddingToCart ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Adding...</span>
+                </>
+              ) : (
+                <>
+                  Add to Cart
+                  <Plus size={16} />
+                </>
+              )}
             </button>
             <div className="flex gap-4">
               <button 
                 onClick={toggleWishlist}
-                className={`flex-[0.5] border py-4 rounded-xl flex items-center justify-center space-x-2 text-[10px] font-bold tracking-widest transition-all uppercase ${isWishlisted ? 'bg-accent border-accent text-white' : 'border-gray-100 text-gray-500 hover:border-accent'}`}
+                disabled={isAddingToWishlist}
+                className={`flex-[0.5] border py-4 rounded-xl flex items-center justify-center space-x-2 text-[10px] font-bold tracking-widest transition-all uppercase disabled:opacity-50 disabled:cursor-not-allowed ${isWishlisted ? 'bg-accent border-accent text-white' : 'border-gray-100 text-gray-500 hover:border-accent'}`}
               >
-                <Heart size={14} fill={isWishlisted ? "currentColor" : "none"} />
+                {isAddingToWishlist ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Heart size={14} fill={isWishlisted ? "currentColor" : "none"} />
+                )}
                 <span>{isWishlisted ? 'Saved' : 'Save'}</span>
               </button>
               <button className="flex-1 border border-gray-100 py-4 rounded-xl flex items-center justify-center space-x-2 text-[10px] font-bold tracking-widest hover:border-accent transition-all uppercase text-gray-500">

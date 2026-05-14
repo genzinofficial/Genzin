@@ -60,6 +60,7 @@
         "images": { "type": "array" },
         "description": { "type": "string" },
         "isNew": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
         "sizes": { "type": "array" },
         "colors": { "type": "array" },
         "variants": { "type": "array" },

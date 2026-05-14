@@ -11,6 +11,7 @@ export interface Product {
   images: string[];
   description: string;
   isNew?: boolean;
+  createdAt?: string | any;
   sizes: string[];
   colors: string[];
   variants?: ProductVariant[];
